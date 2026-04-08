@@ -1082,8 +1082,27 @@ Factor in CURRENT rotating quarterly categories active on ${today} (e.g. Discove
 Return ONLY a valid JSON array, no other text:
 [{"rank":1,"card":"exact card name from list","rate":"e.g. 5% cash back","reason":"one sentence why","tip":"one practical tip","rotating":true}]
 Top 3 only. Keep reason and tip under 15 words each.`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    if(!res.ok){const e=await res.text();results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span><strong>API error ${res.status}</strong><br><span style="font-size:10px">${e.slice(0,200)}</span></div>`;return;}
+    let res;
+    try{
+      res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    }catch(netErr){
+      const isLocal=location.protocol==='file:';
+      const msg=isLocal
+        ?'You\'re opening the file directly. Run via Python: <code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px">python3 -m http.server 8080</code> then open <code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px">localhost:8080/my_cards.html</code>'
+        :'Network error — check your internet connection and that your API key is correct (☰ → Set API Key).';
+      results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>${msg}</div>`;
+      return;
+    }
+    if(!res.ok){
+      const errText=await res.text();
+      let friendly='';
+      if(res.status===401)friendly='Invalid API key. Tap ☰ → Set API Key and re-enter your key from console.anthropic.com.';
+      else if(res.status===429)friendly='Too many requests — wait a moment and try again.';
+      else if(res.status===400)friendly='Bad request. Try a simpler store name.';
+      else friendly=`API error ${res.status}: ${errText.slice(0,120)}`;
+      results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>${friendly}</div>`;
+      return;
+    }
     const data=await res.json();
     if(data.error){results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>${data.error.message}</div>`;return;}
     let parsed;
