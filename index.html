@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Cards">
+<meta name="theme-color" content="#0a0a0f">
+<title>My Cards</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0f'/%3E%3Crect x='15' y='30' width='70' height='42' rx='8' fill='none' stroke='%23c9a84c' stroke-width='3'/%3E%3Crect x='15' y='42' width='70' height='10' fill='%23c9a84c' opacity='0.3'/%3E%3Ccircle cx='28' cy='60' r='4' fill='%23c9a84c'/%3E%3Ccircle cx='40' cy='60' r='4' fill='%23c9a84c' opacity='0.5'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--surface3:#22222f;
+  --border:rgba(255,255,255,0.07);--border-hover:rgba(255,255,255,0.18);
+  --text:#f0efe8;--text-muted:#8a8a99;--text-dim:#555565;
+  --gold:#c9a84c;--gold-light:#e4c97a;--gold-dim:rgba(201,168,76,0.12);
+  --green:#4caf82;--green-dim:rgba(76,175,130,0.12);
+  --red:#e06060;--red-dim:rgba(224,96,96,0.1);
+  --amber:#e0a040;--amber-dim:rgba(224,160,64,0.1);
+  --blue:#5b8dee;--blue-dim:rgba(91,141,238,0.12);
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ─── PAGE SYSTEM ─── */
+.page{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;transition:opacity 0.5s ease,transform 0.5s cubic-bezier(0.4,0,0.2,1);will-change:transform,opacity;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+.page.hidden{opacity:0;pointer-events:none}
+#home-page{transform:translateX(0)}
+#home-page.hidden{transform:translateX(-40px)}
+#cards-page{transform:translateX(100%);opacity:0}
+#cards-page.active{transform:translateX(0);opacity:1}
+#cards-page.hidden{transform:translateX(100%);opacity:0}
+
+/* ─── GLOBAL BG EFFECTS ─── */
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(201,168,76,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.025) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+.bg-glow{position:fixed;top:-20%;left:50%;transform:translateX(-50%);width:1000px;height:500px;background:radial-gradient(ellipse,rgba(201,168,76,0.07) 0%,transparent 65%);pointer-events:none;z-index:0}
+.bg-glow2{position:fixed;bottom:-10%;right:-10%;width:600px;height:600px;background:radial-gradient(ellipse,rgba(91,141,238,0.04) 0%,transparent 65%);pointer-events:none;z-index:0}
+
+/* ═══════════════════════════
+   HOME PAGE
+══════════════════════════════ */
+.home-wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* HOME NAV */
+.home-nav{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safe-top) + 20px) 28px 20px}
+.home-logo{display:flex;align-items:center;gap:10px}
+.home-logo-mark{width:32px;height:32px}
+.home-logo-text{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;color:var(--text)}
+.home-logo-text em{font-style:italic;color:var(--gold-light)}
+.home-nav-cta{background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--gold-light);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:8px 16px;cursor:pointer;transition:all 0.2s;letter-spacing:0.03em}
+.home-nav-cta:hover{background:rgba(201,168,76,0.2);border-color:rgba(201,168,76,0.5)}
+
+/* HERO */
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 0;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border-hover);border-radius:30px;padding:6px 14px;font-size:11px;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:28px;animation:fadeUp 0.8s ease both}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.hero-headline{font-family:'Playfair Display',serif;font-size:clamp(42px,8vw,80px);font-weight:400;line-height:1.05;letter-spacing:-0.03em;margin-bottom:24px;animation:fadeUp 0.8s 0.1s ease both}
+.hero-headline em{font-style:italic;color:var(--gold-light)}
+.hero-headline .line2{color:var(--text-muted);font-size:0.7em}
+.hero-sub{font-size:16px;color:var(--text-muted);font-weight:300;max-width:480px;line-height:1.7;margin-bottom:44px;animation:fadeUp 0.8s 0.2s ease both}
+.hero-sub strong{color:var(--text);font-weight:500}
+
+/* CTA BUTTONS */
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;animation:fadeUp 0.8s 0.3s ease both;margin-bottom:64px}
+.cta-primary{background:linear-gradient(135deg,var(--gold) 0%,#b8860b 100%);color:#0a0a0f;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:16px 32px;border-radius:14px;border:none;cursor:pointer;transition:all 0.25s;letter-spacing:0.02em;box-shadow:0 4px 24px rgba(201,168,76,0.3)}
+.cta-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(201,168,76,0.45)}
+.cta-primary:active{transform:translateY(0)}
+.cta-secondary{background:var(--surface2);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:400;padding:16px 28px;border-radius:14px;border:1px solid var(--border-hover);cursor:pointer;transition:all 0.25s}
+.cta-secondary:hover{border-color:rgba(255,255,255,0.25);color:var(--text)}
+
+/* FLOATING CARDS PREVIEW */
+.cards-preview{position:relative;width:100%;max-width:640px;margin:0 auto;height:220px;animation:fadeUp 0.8s 0.4s ease both}
+.preview-card{position:absolute;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.preview-card svg{display:block}
+.pc-back{left:0%;top:20px;width:58%;transform:rotate(-6deg);opacity:0.7;animation:floatA 6s ease-in-out infinite}
+.pc-mid{left:22%;top:5px;width:58%;transform:rotate(1deg);opacity:0.85;animation:floatB 7s ease-in-out infinite}
+.pc-front{left:40%;top:15px;width:60%;transform:rotate(7deg);animation:floatC 5.5s ease-in-out infinite}
+@keyframes floatA{0%,100%{transform:rotate(-6deg) translateY(0)}50%{transform:rotate(-6deg) translateY(-8px)}}
+@keyframes floatB{0%,100%{transform:rotate(1deg) translateY(0)}50%{transform:rotate(1deg) translateY(-12px)}}
+@keyframes floatC{0%,100%{transform:rotate(7deg) translateY(0)}50%{transform:rotate(7deg) translateY(-6px)}}
+
+/* FEATURES STRIP */
+.features{padding:80px 24px;max-width:1100px;margin:0 auto;width:100%}
+.features-label{font-size:10px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:48px;display:flex;align-items:center;justify-content:center;gap:12px}
+.features-label::before,.features-label::after{content:'';width:40px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.features-label::after{background:linear-gradient(90deg,var(--gold),transparent)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;transition:all 0.3s;position:relative;overflow:hidden}
+.feat::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.3s;border-radius:20px}
+.feat:hover{border-color:var(--border-hover);transform:translateY(-4px)}
+.feat-f1::before{background:radial-gradient(ellipse at 0% 0%,rgba(201,168,76,0.08),transparent 60%)}
+.feat-f2::before{background:radial-gradient(ellipse at 0% 0%,rgba(76,175,130,0.08),transparent 60%)}
+.feat-f3::before{background:radial-gradient(ellipse at 0% 0%,rgba(91,141,238,0.08),transparent 60%)}
+.feat-f4::before{background:radial-gradient(ellipse at 0% 0%,rgba(224,160,64,0.08),transparent 60%)}
+.feat-f5::before{background:radial-gradient(ellipse at 0% 0%,rgba(224,96,96,0.08),transparent 60%)}
+.feat-f6::before{background:radial-gradient(ellipse at 0% 0%,rgba(201,168,76,0.08),transparent 60%)}
+.feat:hover::before{opacity:1}
+.feat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
+.fi-gold{background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2)}
+.fi-green{background:var(--green-dim);border:1px solid rgba(76,175,130,0.2)}
+.fi-blue{background:var(--blue-dim);border:1px solid rgba(91,141,238,0.2)}
+.fi-amber{background:var(--amber-dim);border:1px solid rgba(224,160,64,0.2)}
+.fi-red{background:var(--red-dim);border:1px solid rgba(224,96,96,0.2)}
+.feat-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:500;color:var(--text);margin-bottom:8px;line-height:1.3}
+.feat-desc{font-size:13px;color:var(--text-muted);line-height:1.65;font-weight:300}
+
+/* STATS STRIP */
+.stats-strip{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:40px 24px}
+.stats-strip-inner{max-width:800px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.home-stat-value{font-family:'Playfair Display',serif;font-size:32px;font-weight:500;color:var(--gold-light);margin-bottom:4px}
+.home-stat-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:500}
+
+/* BOTTOM CTA */
+.home-bottom{text-align:center;padding:80px 24px calc(var(--safe-bottom) + 60px)}
+.home-bottom-text{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,44px);font-weight:400;line-height:1.2;margin-bottom:8px}
+.home-bottom-text em{font-style:italic;color:var(--gold-light)}
+.home-bottom-sub{font-size:14px;color:var(--text-muted);margin-bottom:32px;font-weight:300}
+.cta-large{background:linear-gradient(135deg,var(--gold) 0%,#a87c2a 100%);color:#0a0a0f;font-family:'Playfair Display',serif;font-size:18px;font-weight:500;font-style:italic;padding:18px 48px;border-radius:16px;border:none;cursor:pointer;transition:all 0.25s;letter-spacing:0.01em;box-shadow:0 4px 32px rgba(201,168,76,0.35)}
+.cta-large:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(201,168,76,0.5)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════
+   CARDS PAGE NAV
+══════════════════════════════ */
+.top-nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:calc(var(--safe-top) + 12px) 20px 12px;background:rgba(10,10,15,0.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.back-btn-nav{width:36px;height:36px;background:var(--surface2);border:1px solid var(--border-hover);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;color:var(--text-muted);font-size:18px;flex-shrink:0;line-height:1}
+.back-btn-nav:hover{border-color:var(--gold);color:var(--gold-light)}
+.nav-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;flex:1}
+.nav-title em{font-style:italic;color:var(--gold-light)}
+.menu-btn{width:36px;height:36px;background:var(--surface2);border:1px solid var(--border-hover);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all 0.2s;flex-shrink:0}
+.menu-btn:hover{background:var(--surface3);border-color:var(--gold)}
+.menu-btn span{display:block;width:15px;height:1.5px;background:var(--text-muted);border-radius:2px;transition:all 0.25s}
+.menu-btn.active span{background:var(--gold-light)}
+.menu-btn.active span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.menu-btn.active span:nth-child(2){opacity:0;transform:scaleX(0)}
+.menu-btn.active span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+
+/* DRAWER */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;right:-320px;width:290px;height:100%;background:var(--surface);border-left:1px solid var(--border-hover);z-index:101;transition:right 0.3s cubic-bezier(0.34,1.1,0.64,1);display:flex;flex-direction:column;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);overflow-y:auto}
+.drawer.open{right:0}
+.drawer-header{padding:18px 18px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:16px}
+.drawer-title-el{font-family:'Playfair Display',serif;font-size:16px;font-weight:500}
+.drawer-close{width:28px;height:28px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s}
+.drawer-close:hover{border-color:var(--border-hover);color:var(--text)}
+.drawer-section-label{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-dim);padding:0 18px;margin-bottom:8px}
+.drawer-btns{display:flex;flex-direction:column;gap:6px;padding:0 14px;margin-bottom:20px}
+.drawer-btn{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;text-align:left;width:100%}
+.drawer-btn:hover{border-color:var(--border-hover);background:var(--surface3);transform:translateX(-2px)}
+.drawer-btn-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.db-add .drawer-btn-icon{background:var(--gold-dim);border:1px solid rgba(201,168,76,0.25)}
+.db-search .drawer-btn-icon{background:var(--blue-dim);border:1px solid rgba(91,141,238,0.25)}
+.db-edit .drawer-btn-icon{background:var(--green-dim);border:1px solid rgba(76,175,130,0.25)}
+.db-remove .drawer-btn-icon{background:var(--red-dim);border:1px solid rgba(224,96,96,0.2)}
+.drawer-btn-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:1px}
+.drawer-btn-sub{font-size:10px;color:var(--text-dim);font-weight:300}
+
+/* ─── CARDS PAGE CONTENT ─── */
+.cards-wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:24px 18px 100px}
+
+/* LIVE UPDATES BANNER */
+.updates-banner{background:var(--surface2);border:1px solid rgba(91,141,238,0.25);border-radius:14px;padding:14px 16px;margin-bottom:20px;animation:cardIn 0.4s ease both}
+.updates-banner.hidden{display:none}
+.updates-banner-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.updates-live-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px var(--blue);animation:livePulse 2s ease infinite;flex-shrink:0}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.85)}}
+.updates-banner-title{font-size:11px;font-weight:500;color:var(--blue);text-transform:uppercase;letter-spacing:0.1em}
+.updates-banner-date{font-size:10px;color:var(--text-dim);margin-left:auto}
+.updates-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim);font-weight:300}
+.updates-loading.hidden{display:none}
+.upd-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);animation:pulse 1.2s ease infinite}
+.upd-dot:nth-child(2){animation-delay:0.2s}
+.upd-dot:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+.update-item{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5}
+.update-item:last-child{border-bottom:none;padding-bottom:0}
+.update-card-name{font-weight:500;color:var(--text);white-space:nowrap;min-width:fit-content;font-size:11px}
+.update-text{color:var(--text-muted);font-weight:300}
+.update-highlight{color:var(--gold-light);font-weight:500}
+.updates-dismiss{font-size:10px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:10px;text-decoration:underline;text-underline-offset:2px;padding:0}
+.updates-dismiss:hover{color:var(--text-muted)}
+
+/* STATS ROW */
+.stats-row{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.stats-bar{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.stat{background:var(--surface);padding:12px 8px;text-align:center;transition:background 0.2s}
+.stat:hover{background:var(--surface2)}
+.stat-value{font-family:'Playfair Display',serif;font-size:15px;font-weight:500;color:var(--gold-light);display:block;margin-bottom:2px}
+.stat-label{font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:500}
+.limit-toggle{width:40px;height:40px;background:var(--surface2);border:1px solid var(--border-hover);border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;font-size:15px}
+.limit-toggle:hover{border-color:var(--gold);background:var(--surface3)}
+.limit-toggle.hiding{opacity:0.5}
+
+/* CARD SECTIONS */
+.section{margin-bottom:30px}
+.section-title{font-size:10px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;padding-left:2px;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;cursor:pointer;transition:border-color 0.25s,transform 0.25s,box-shadow 0.25s;animation:cardIn 0.4s ease both}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,0.45)}
+.card:active{transform:translateY(-1px)}
+.card-visual{width:100%;height:130px;position:relative;overflow:hidden}
+.card-visual svg{width:100%;height:100%}
+.card-body{padding:13px}
+.card-issuer{font-size:9px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:2px}
+.card-name{font-family:'Playfair Display',serif;font-size:13px;font-weight:500;color:var(--text);line-height:1.25;margin-bottom:8px}
+.card-meta{display:flex;align-items:center;justify-content:space-between}
+.card-fee{font-family:'Playfair Display',serif;font-size:14px;color:var(--gold-light);font-weight:500}
+.card-fee-sub{font-size:9px;color:var(--text-dim);margin-top:1px}
+.card-limit{font-size:10px;color:var(--green);font-weight:500;transition:opacity 0.3s}
+.card-limit.hidden{opacity:0;pointer-events:none}
+.card-divider{height:1px;background:var(--border);margin:9px 0}
+.card-rewards{font-size:10px;color:var(--text-muted);line-height:1.55;font-weight:300}
+.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+.status-pill{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:500;padding:3px 7px;border-radius:20px;letter-spacing:0.04em;text-transform:uppercase}
+.status-keep{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,130,0.2)}
+.status-passive{background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid var(--border)}
+.status-cut{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,96,96,0.2)}
+.status-niche{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(224,160,64,0.2)}
+.card-tap-hint{font-size:9px;color:var(--text-dim);display:flex;align-items:center;gap:3px}
+
+/* ─── CARD DETAIL SHEET ─── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--safe-bottom)}
+.sheet-overlay.open{opacity:1;pointer-events:all}
+.detail-sheet{background:var(--surface);border:1px solid var(--border-hover);border-radius:28px 28px 0 0;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;transform:translateY(60px);transition:transform 0.35s cubic-bezier(0.34,1.2,0.64,1)}
+.sheet-overlay.open .detail-sheet{transform:translateY(0)}
+.sheet-handle-bar{padding:14px 0 0;display:flex;justify-content:center}
+.sheet-handle{width:38px;height:4px;background:var(--border-hover);border-radius:2px}
+.sheet-card-visual{width:100%;height:160px;overflow:hidden}
+.sheet-card-visual svg{width:100%;height:100%}
+.sheet-body{padding:20px 22px 28px}
+.sheet-issuer{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px}
+.sheet-name{font-family:'Playfair Display',serif;font-size:21px;font-weight:500;color:var(--text);margin-bottom:14px;line-height:1.2}
+.sheet-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.sheet-meta-pill{display:flex;flex-direction:column;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;flex:1;min-width:80px}
+.smp-label{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px}
+.smp-value{font-size:13px;font-weight:500;color:var(--text);font-family:'Playfair Display',serif}
+.smp-value.green{color:var(--green)}
+.smp-value.gold{color:var(--gold-light)}
+.sheet-divider{height:1px;background:var(--border);margin:14px 0}
+.sheet-section-title{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-dim);margin-bottom:10px}
+.ai-detail-content{font-size:13px;color:var(--text-muted);line-height:1.7;font-weight:300}
+.ai-detail-content strong{color:var(--text);font-weight:500}
+.ai-detail-loading{display:flex;align-items:center;gap:10px;padding:20px 0;color:var(--gold);font-size:12px}
+.ai-detail-loading.hidden{display:none}
+.gold-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.2s ease infinite}
+.gold-dot:nth-child(2){animation-delay:0.2s}
+.gold-dot:nth-child(3){animation-delay:0.4s}
+.benefit-item{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);font-weight:300;line-height:1.5}
+.benefit-item:last-child{border-bottom:none}
+.benefit-item::before{content:'→';color:var(--gold);font-size:10px;flex-shrink:0}
+.sheet-note{background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--gold-light);line-height:1.6;margin-top:14px}
+.sheet-note-label{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:4px}
+.sheet-close{position:sticky;bottom:0;background:linear-gradient(transparent,var(--surface) 40%);padding:18px 22px 10px}
+.btn-sheet-close{width:100%;padding:13px;border-radius:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;background:var(--surface2);border:1px solid var(--border-hover);color:var(--text-muted);transition:all 0.2s}
+.btn-sheet-close:hover{background:var(--surface3)}
+
+/* ─── MODAL BASE ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:300;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;padding-bottom:var(--safe-bottom)}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface2);border:1px solid var(--border-hover);border-radius:24px 24px 0 0;padding:22px 20px 28px;width:100%;max-width:560px;transform:translateY(40px);transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1);max-height:90vh;overflow-y:auto}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-handle{width:34px;height:4px;background:var(--border-hover);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;margin-bottom:3px}
+.modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;font-weight:300}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.form-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim)}
+.form-input,.form-textarea{background:var(--surface);border:1px solid var(--border-hover);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;padding:10px 12px;outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;width:100%}
+.form-input:focus,.form-textarea:focus{border-color:var(--gold)}
+.form-input:disabled{opacity:0.45;cursor:not-allowed}
+.form-textarea{resize:vertical;min-height:70px;line-height:1.5}
+.btn{padding:11px 16px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;letter-spacing:0.02em;width:100%}
+.btn+.btn{margin-top:8px}
+.btn-cancel{background:var(--surface);border:1px solid var(--border-hover);color:var(--text-muted)}
+.btn-cancel:hover{background:var(--surface3)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#a87c2a);color:var(--bg);font-weight:500}
+.btn-gold:hover{opacity:0.9}
+.btn-gold:disabled{opacity:0.4;cursor:not-allowed}
+.btn-blue{background:var(--blue-dim);border:1px solid rgba(91,141,238,0.3);color:var(--blue)}
+.btn-blue:hover{background:rgba(91,141,238,0.2)}
+.btn-danger{background:var(--red-dim);border:1px solid rgba(224,96,96,0.3);color:var(--red)}
+.btn-danger:hover{background:rgba(224,96,96,0.2)}
+.btn-danger:disabled{opacity:0.4;cursor:not-allowed}
+.btn-green{background:var(--green-dim);border:1px solid rgba(76,175,130,0.3);color:var(--green)}
+.btn-green:hover{background:rgba(76,175,130,0.2)}
+.btn-green:disabled{opacity:0.4;cursor:not-allowed}
+.ai-loading{display:flex;align-items:center;gap:8px;background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:9px 12px;font-size:11px;color:var(--gold-light);margin:8px 0}
+.ai-loading.hidden{display:none}
+.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pulse 1.2s ease infinite}
+.ai-dot:nth-child(2){animation-delay:0.2s}
+.ai-dot:nth-child(3){animation-delay:0.4s}
+.ai-filled-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);font-weight:500;margin:10px 0 6px}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* SEARCH */
+.search-input-wrap{position:relative;margin-bottom:12px}
+.search-input{width:100%;background:var(--surface);border:1px solid rgba(91,141,238,0.3);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;padding:10px 52px 10px 12px;outline:none;-webkit-appearance:none}
+.search-input:focus{border-color:var(--blue)}
+.search-go{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--blue);border:none;border-radius:7px;color:#fff;font-size:12px;padding:5px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500}
+.search-go:disabled{opacity:0.4;cursor:not-allowed}
+.search-placeholder{text-align:center;padding:24px 8px;color:var(--text-dim);font-size:12px;font-weight:300;line-height:1.6}
+.search-placeholder .ico{font-size:24px;margin-bottom:8px;display:block;opacity:0.4}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;animation:cardIn 0.3s ease both}
+.result-rank{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.rank-badge{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.rank-1{background:rgba(201,168,76,0.2);color:var(--gold-light);border:1px solid rgba(201,168,76,0.3)}
+.rank-2{background:rgba(255,255,255,0.07);color:var(--text-muted);border:1px solid var(--border)}
+.rank-3{background:rgba(255,255,255,0.05);color:var(--text-dim);border:1px solid var(--border)}
+.rank-name{font-family:'Playfair Display',serif;font-size:13px;color:var(--text);font-weight:500;flex:1}
+.rank-rate{font-size:15px;font-weight:500;color:var(--gold-light);font-family:'Playfair Display',serif}
+.result-reason{font-size:11px;color:var(--text-muted);line-height:1.5;font-weight:300}
+.result-tip{font-size:10px;color:var(--text-dim);font-style:italic;margin-top:3px}
+.search-loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:24px;color:var(--blue);font-size:12px}
+.search-loading.hidden{display:none}
+.blue-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);animation:pulse 1.2s ease infinite}
+.blue-dot:nth-child(2){animation-delay:0.2s}
+.blue-dot:nth-child(3){animation-delay:0.4s}
+
+/* REMOVE */
+.remove-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:340px;overflow-y:auto}
+.remove-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all 0.2s;user-select:none}
+.remove-item:hover{border-color:var(--border-hover)}
+.remove-item.selected{border-color:rgba(224,96,96,0.4);background:var(--red-dim)}
+.remove-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border-hover);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;font-size:11px;color:transparent}
+.remove-item.selected .remove-check{background:var(--red);border-color:var(--red);color:#fff}
+.remove-item-name{font-size:12px;font-weight:500;color:var(--text)}
+.remove-item-sub{font-size:10px;color:var(--text-dim);margin-top:1px}
+.remove-count{font-size:11px;color:var(--red);font-weight:500;margin-bottom:8px}
+.select-all-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.select-all-btn{font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;text-decoration:underline;text-underline-offset:2px}
+
+/* EDIT */
+.edit-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-bottom:12px}
+.edit-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all 0.2s}
+.edit-item:hover{border-color:var(--gold);background:var(--surface3)}
+.edit-item-name{font-size:12px;font-weight:500;color:var(--text)}
+.edit-item-sub{font-size:10px;color:var(--text-dim);margin-top:2px}
+.back-btn-form{font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;margin-bottom:12px;display:flex;align-items:center;gap:4px}
+.back-btn-form:hover{color:var(--text-muted)}
+.edit-form-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--green);margin-bottom:12px}
+
+/* CONFIRM */
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:400;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;padding-bottom:var(--safe-bottom)}
+.confirm-overlay.open{opacity:1;pointer-events:all}
+.confirm-sheet{background:var(--surface2);border:1px solid rgba(224,96,96,0.3);border-radius:24px 24px 0 0;padding:22px 20px 28px;width:100%;max-width:400px;transform:translateY(40px);transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1);text-align:center}
+.confirm-overlay.open .confirm-sheet{transform:translateY(0)}
+.confirm-handle{width:32px;height:4px;background:var(--border-hover);border-radius:2px;margin:0 auto 14px}
+.confirm-icon{width:44px;height:44px;background:var(--red-dim);border:1px solid rgba(224,96,96,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:18px}
+.confirm-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--text);margin-bottom:5px}
+.confirm-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;font-weight:300}
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.confirm-btn{padding:11px;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.2s}
+.confirm-keep{background:var(--surface3);border:1px solid var(--border-hover);color:var(--text-muted)}
+.confirm-keep:hover{background:var(--surface)}
+.confirm-remove{background:var(--red-dim);border:1px solid rgba(224,96,96,0.3);color:var(--red)}
+.confirm-remove:hover{background:rgba(224,96,96,0.2)}
+
+@media(max-width:700px){
+  .features-grid{grid-template-columns:1fr 1fr}
+  .stats-strip-inner{grid-template-columns:repeat(2,1fr)}
+  .hero-headline{font-size:clamp(38px,10vw,56px)}
+  .card-grid{grid-template-columns:1fr}
+  .stats-bar{grid-template-columns:repeat(3,1fr)}
+  .drawer{width:86vw;max-width:300px}
+  .form-grid-2{grid-template-columns:1fr}
+}
+@media(max-width:480px){.features-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<!-- ═══════════ HOME PAGE ═══════════ -->
+<div class="page" id="home-page">
+<div class="home-wrap">
+
+  <nav class="home-nav">
+    <div class="home-logo">
+      <svg class="home-logo-mark" viewBox="0 0 32 32" fill="none">
+        <rect x="2" y="8" width="28" height="18" rx="4" stroke="#c9a84c" stroke-width="1.5"/>
+        <rect x="2" y="14" width="28" height="5" fill="#c9a84c" opacity="0.2"/>
+        <circle cx="8" cy="22" r="2" fill="#c9a84c" opacity="0.7"/>
+        <circle cx="14" cy="22" r="2" fill="#c9a84c" opacity="0.4"/>
+      </svg>
+      <span class="home-logo-text">My <em>Cards</em></span>
+    </div>
+    <button class="home-nav-cta" onclick="goToCards()">Open Portfolio →</button>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-badge"><span class="hero-badge-dot"></span>Your personal card intelligence</div>
+    <h1 class="hero-headline">
+      Know your cards.<br>
+      <em>Use them smarter.</em><br>
+      <span class="line2">Every single day.</span>
+    </h1>
+    <p class="hero-sub">
+      A <strong>beautiful, AI-powered portfolio</strong> for every credit card you own.
+      Live rotating categories, store-by-store card rankings, instant card details — always current, always personal.
+    </p>
+    <div class="hero-ctas">
+      <button class="cta-primary" onclick="goToCards()">View My Portfolio →</button>
+      <button class="cta-secondary" onclick="document.querySelector('.features').scrollIntoView({behavior:'smooth'})">See what it does</button>
+    </div>
+
+    <div class="cards-preview">
+      <div class="preview-card pc-back">
+        <svg viewBox="0 0 280 165" xmlns="http://www.w3.org/2000/svg" width="280">
+          <defs><linearGradient id="hpg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0d2137"/><stop offset="100%" style="stop-color:#1a3d5c"/></linearGradient></defs>
+          <rect width="280" height="165" rx="12" fill="url(#hpg1)"/>
+          <circle cx="220" cy="40" r="100" fill="#4a9eff" opacity="0.06"/>
+          <rect x="20" y="52" width="32" height="24" rx="4" fill="#d4af37" opacity="0.85"/>
+          <text x="20" y="118" font-size="8" fill="white" opacity="0.6" font-family="monospace" letter-spacing="2">•••• •••• •••• ••••</text>
+          <text x="20" y="135" font-size="7" fill="white" opacity="0.5" font-family="sans-serif" letter-spacing="1">CAPITAL ONE</text>
+          <text x="230" y="108" font-size="11" font-weight="700" fill="white" opacity="0.85" font-style="italic" font-family="serif">VISA</text>
+        </svg>
+      </div>
+      <div class="preview-card pc-mid">
+        <svg viewBox="0 0 280 165" xmlns="http://www.w3.org/2000/svg" width="280">
+          <defs><linearGradient id="hpg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1c1c1e"/><stop offset="100%" style="stop-color:#2c2c2e"/></linearGradient></defs>
+          <rect width="280" height="165" rx="12" fill="url(#hpg2)"/>
+          <circle cx="40" cy="140" r="90" fill="#ffffff" opacity="0.04"/>
+          <rect x="20" y="52" width="32" height="24" rx="4" fill="#b0b0b0" opacity="0.85"/>
+          <rect x="20" y="52" width="32" height="24" rx="4" fill="none" stroke="#d0d0d0" stroke-width="0.5"/>
+          <text x="20" y="118" font-size="8" fill="white" opacity="0.6" font-family="monospace" letter-spacing="2">•••• •••• •••• ••••</text>
+          <text x="20" y="135" font-size="7" fill="white" opacity="0.5" font-family="sans-serif" letter-spacing="1">APPLE</text>
+          <circle cx="225" cy="100" r="14" fill="#eb001b" opacity="0.85"/>
+          <circle cx="241" cy="100" r="14" fill="#f79e1b" opacity="0.85"/>
+        </svg>
+      </div>
+      <div class="preview-card pc-front">
+        <svg viewBox="0 0 280 165" xmlns="http://www.w3.org/2000/svg" width="280">
+          <defs><linearGradient id="hpg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0a1628"/><stop offset="100%" style="stop-color:#0e2040"/></linearGradient></defs>
+          <rect width="280" height="165" rx="12" fill="url(#hpg3)"/>
+          <circle cx="240" cy="30" r="110" fill="#1a6bff" opacity="0.07"/>
+          <rect x="20" y="52" width="32" height="24" rx="4" fill="#d4af37" opacity="0.85"/>
+          <text x="20" y="118" font-size="8" fill="white" opacity="0.6" font-family="monospace" letter-spacing="2">•••• •••• •••• ••••</text>
+          <text x="20" y="135" font-size="7" fill="white" opacity="0.5" font-family="sans-serif" letter-spacing="1">CHASE</text>
+          <text x="230" y="108" font-size="11" font-weight="700" fill="white" opacity="0.85" font-style="italic" font-family="serif">VISA</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="features-label">Everything your wallet needs</div>
+    <div class="features-grid">
+      <div class="feat feat-f1">
+        <div class="feat-icon fi-gold">💳</div>
+        <div class="feat-title">Your full portfolio, beautifully organized</div>
+        <div class="feat-desc">All 17 cards in one place. Each with an illustrated visual, rewards summary, credit limit, and annual fee — organized by category.</div>
+      </div>
+      <div class="feat feat-f2">
+        <div class="feat-icon fi-green">⟳</div>
+        <div class="feat-title">Live rotating categories on every load</div>
+        <div class="feat-desc">Discover, Chase Freedom, and others rotate their 5% categories every quarter. The app checks what's active right now every time you open it.</div>
+      </div>
+      <div class="feat feat-f3">
+        <div class="feat-icon fi-blue">⌕</div>
+        <div class="feat-title">Best card for any store, instantly</div>
+        <div class="feat-desc">Type any merchant — grocery store, airline, gas station, restaurant — and get your top 3 cards ranked by exact cash back or reward rate.</div>
+      </div>
+      <div class="feat feat-f4">
+        <div class="feat-icon fi-amber">✎</div>
+        <div class="feat-title">Add & edit cards in seconds</div>
+        <div class="feat-desc">Just type a card name and AI fills in the issuer, rewards, benefits, and advisor note automatically. You only need to enter your credit limit.</div>
+      </div>
+      <div class="feat feat-f5">
+        <div class="feat-icon fi-green">📋</div>
+        <div class="feat-title">Tap any card for a full briefing</div>
+        <div class="feat-desc">Tap a card to get a plain-English breakdown of what it's best for today, current rotating categories, expiring credits, and a personalized tip.</div>
+      </div>
+      <div class="feat feat-f1">
+        <div class="feat-icon fi-gold">💾</div>
+        <div class="feat-title">Everything saved automatically</div>
+        <div class="feat-desc">Every card you add, edit, or remove is saved to your device. Your portfolio is exactly how you left it every time you come back.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stats-strip-inner">
+      <div><div class="home-stat-value" id="homeStatCards">—</div><div class="home-stat-label">Cards tracked</div></div>
+      <div><div class="home-stat-value" id="homeStatCredit">—</div><div class="home-stat-label">Total credit</div></div>
+      <div><div class="home-stat-value" id="homeStatFees">—</div><div class="home-stat-label">Annual fees</div></div>
+      <div><div class="home-stat-value" id="homeStatCost">—</div><div class="home-stat-label">True annual cost</div></div>
+    </div>
+  </div>
+
+  <div class="home-bottom">
+    <div class="home-bottom-text">Ready to use your cards <em>smarter?</em></div>
+    <div class="home-bottom-sub">Your portfolio is waiting. Tap below to open it.</div>
+    <button class="cta-large" onclick="goToCards()">Open My Portfolio</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════ CARDS PAGE ═══════════ -->
+<div class="page hidden" id="cards-page">
+
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <span class="drawer-title-el">Manage Cards</span>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-section-label">Actions</div>
+    <div class="drawer-btns">
+      <button class="drawer-btn db-add" onclick="openModal('add');closeDrawer()">
+        <div class="drawer-btn-icon">＋</div>
+        <div><div class="drawer-btn-title">Add a Card</div><div class="drawer-btn-sub">AI auto-fills card details</div></div>
+      </button>
+      <button class="drawer-btn db-search" onclick="openModal('search');closeDrawer()">
+        <div class="drawer-btn-icon">⌕</div>
+        <div><div class="drawer-btn-title">Best Card for a Store</div><div class="drawer-btn-sub">Find your top earner anywhere</div></div>
+      </button>
+      <button class="drawer-btn db-edit" onclick="openModal('edit');closeDrawer()">
+        <div class="drawer-btn-icon">✎</div>
+        <div><div class="drawer-btn-title">Edit a Card</div><div class="drawer-btn-sub">Update limits, rewards & more</div></div>
+      </button>
+      <button class="drawer-btn db-remove" onclick="openModal('remove');closeDrawer()">
+        <div class="drawer-btn-icon">−</div>
+        <div><div class="drawer-btn-title">Remove Cards</div><div class="drawer-btn-sub">Select multiple to remove</div></div>
+      </button>
+    </div>
+  </div>
+
+  <nav class="top-nav">
+    <button class="back-btn-nav" onclick="goHome()" title="Back to home">‹</button>
+    <span class="nav-title">My <em>Cards</em></span>
+    <button class="menu-btn" id="menuBtn" onclick="toggleDrawer()"><span></span><span></span><span></span></button>
+  </nav>
+
+  <div class="cards-wrap">
+    <div class="stats-row">
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-value" id="statCards">—</span><span class="stat-label">Cards</span></div>
+        <div class="stat"><span class="stat-value" id="statCredit">—</span><span class="stat-label">Total Credit</span></div>
+        <div class="stat"><span class="stat-value" id="statFees">—</span><span class="stat-label">Fees/yr</span></div>
+        <div class="stat"><span class="stat-value" id="statMembership">—</span><span class="stat-label">Members/yr</span></div>
+        <div class="stat"><span class="stat-value" id="statTotal">—</span><span class="stat-label">True Cost</span></div>
+      </div>
+      <button class="limit-toggle hiding" id="limitToggleBtn" onclick="toggleLimits()" title="Show/hide credit limits">🙈</button>
+    </div>
+
+    <div class="updates-banner hidden" id="updatesBanner">
+      <div class="updates-banner-header">
+        <span class="updates-live-dot"></span>
+        <span class="updates-banner-title">What's current right now</span>
+        <span class="updates-banner-date" id="updatesDate"></span>
+      </div>
+      <div class="updates-loading" id="updatesLoading">
+        <div class="upd-dot"></div><div class="upd-dot"></div><div class="upd-dot"></div>
+        <span>Checking rotating categories & current promos…</span>
+      </div>
+      <div id="updatesContent"></div>
+      <button class="updates-dismiss" onclick="document.getElementById('updatesBanner').classList.add('hidden')">Dismiss</button>
+    </div>
+
+    <div id="cardSections"></div>
+  </div>
+
+  <!-- CARD DETAIL SHEET -->
+  <div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet(event)">
+    <div class="detail-sheet">
+      <div class="sheet-handle-bar"><div class="sheet-handle"></div></div>
+      <div class="sheet-card-visual" id="sheetVisual"></div>
+      <div class="sheet-body">
+        <div class="sheet-issuer" id="sheetIssuer"></div>
+        <div class="sheet-name" id="sheetName"></div>
+        <div class="sheet-meta-row" id="sheetMeta"></div>
+        <div class="sheet-divider"></div>
+        <div class="sheet-section-title">Benefits & Rewards</div>
+        <div id="sheetBenefits"></div>
+        <div class="ai-detail-loading hidden" id="aiDetailLoading">
+          <div class="gold-dot"></div><div class="gold-dot"></div><div class="gold-dot"></div>
+          <span>Getting current card details…</span>
+        </div>
+        <div id="aiDetailContent"></div>
+        <div id="sheetNote"></div>
+      </div>
+      <div class="sheet-close"><button class="btn-sheet-close" onclick="closeSheet()">Close</button></div>
+    </div>
+  </div>
+
+  <!-- ADD MODAL -->
+  <div class="modal-overlay" id="modal-add">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Add a Card</div>
+      <div class="modal-sub">Type the card name — AI fills everything else automatically.</div>
+      <div class="form-group"><label class="form-label">Card name *</label><input class="form-input" id="f-name" placeholder="e.g. Chase Sapphire Reserve" oninput="onNameInput()"></div>
+      <div class="form-group"><label class="form-label">Credit limit ($)</label><input class="form-input" id="f-limit" type="number" min="0" placeholder="e.g. 10000"></div>
+      <div class="ai-loading hidden" id="aiLoading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Looking up card details…</span></div>
+      <div id="aiFilledFields" style="display:none">
+        <div class="ai-filled-badge">✦ AI filled these in — edit if needed</div>
+        <div class="form-group"><label class="form-label">Issuer & network</label><input class="form-input" id="f-issuer" placeholder="e.g. Chase · Visa Signature"></div>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Annual fee ($)</label><input class="form-input" id="f-fee" type="number" min="0" placeholder="0"></div>
+          <div class="form-group"><label class="form-label">Fee label</label><input class="form-input" id="f-feelabel" placeholder="per year"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Rewards summary</label><input class="form-input" id="f-rewards" placeholder="3x dining · 2x travel · 1x all else"></div>
+        <div class="form-group"><label class="form-label">Benefits (one per line)</label><textarea class="form-textarea" id="f-benefits" placeholder="5x Chase Travel&#10;3x dining &amp; streaming"></textarea></div>
+        <div class="form-group"><label class="form-label">Advisor note</label><input class="form-input" id="f-note" placeholder="One sentence tip."></div>
+      </div>
+      <button class="btn btn-gold" id="addSubmitBtn" onclick="addCard()" disabled style="margin-top:8px">Add Card</button>
+      <button class="btn btn-cancel" onclick="closeModal('add')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div class="modal-overlay" id="modal-search">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Best Card for a Store</div>
+      <div class="modal-sub">Type any merchant — get your top 3 cards ranked including current rotating categories.</div>
+      <div class="search-input-wrap"><input class="search-input" id="storeInput" placeholder="e.g. Whole Foods, Uber Eats, Delta…" onkeydown="if(event.key==='Enter')runSearch()"><button class="search-go" id="searchGoBtn" onclick="runSearch()">Go</button></div>
+      <div class="search-loading hidden" id="searchLoading"><div class="blue-dot"></div><div class="blue-dot"></div><div class="blue-dot"></div><span>Finding best cards…</span></div>
+      <div id="searchResults"><div class="search-placeholder"><span class="ico">🏪</span>Type any store and I'll rank your best cards, including rotating 5% categories active right now.</div></div>
+      <button class="btn btn-cancel" onclick="closeModal('search')" style="margin-top:12px">Close</button>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div id="editListView">
+        <div class="modal-title">Edit a Card</div>
+        <div class="modal-sub">Select any card to edit its details.</div>
+        <div class="edit-list" id="editList"></div>
+        <button class="btn btn-cancel" onclick="closeModal('edit')">Cancel</button>
+      </div>
+      <div id="editFormView" style="display:none">
+        <button class="back-btn-form" onclick="showEditList()">← Back to list</button>
+        <div id="editFormContent"></div>
+        <button class="btn btn-green" onclick="saveEdit()">Save Changes</button>
+        <button class="btn btn-cancel" onclick="showEditList()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMOVE MODAL -->
+  <div class="modal-overlay" id="modal-remove">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Remove Cards</div>
+      <div class="modal-sub">Select one or more cards to remove from your portfolio.</div>
+      <div class="select-all-row">
+        <span class="remove-count" id="removeCount">0 selected</span>
+        <button class="select-all-btn" onclick="toggleSelectAll()">Select all</button>
+      </div>
+      <div class="remove-list" id="removeList"></div>
+      <button class="btn btn-danger" id="removeSubmitBtn" onclick="openConfirmRemove()" disabled>Remove Selected</button>
+      <button class="btn btn-cancel" onclick="closeModal('remove')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CONFIRM REMOVE -->
+  <div class="confirm-overlay" id="confirmRemoveOverlay">
+    <div class="confirm-sheet">
+      <div class="confirm-handle"></div>
+      <div class="confirm-icon">🗑</div>
+      <div class="confirm-title">Remove selected cards?</div>
+      <div class="confirm-sub" id="confirmRemoveSub"></div>
+      <div class="confirm-actions">
+        <button class="confirm-btn confirm-keep" onclick="closeConfirmRemove()">Keep them</button>
+        <button class="confirm-btn confirm-remove" onclick="confirmRemove()">Remove</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end cards-page -->
+
+<script>
+// ─── CARD VISUALS ───
+const CARD_THEMES={
+  'Venture X Rewards':{bg1:'#0d2137',bg2:'#1a3d5c',accent:'#4a9eff',accent2:'#2d7dd2',network:'VISA',chip:'gold',label:'CAPITAL ONE'},
+  'Sapphire Preferred':{bg1:'#0a1628',bg2:'#0e2040',accent:'#1a6bff',accent2:'#0d4eb5',network:'VISA',chip:'gold',label:'CHASE'},
+  'Blue Cash Preferred':{bg1:'#1a2a4a',bg2:'#243a66',accent:'#4488ff',accent2:'#2266cc',network:'AMEX',chip:'silver',label:'AMERICAN EXPRESS'},
+  'AAdvantage Platinum Select':{bg1:'#1a0a2e',bg2:'#2d1450',accent:'#aa44ff',accent2:'#7722cc',network:'MC',chip:'silver',label:'CITI'},
+  'Costco Anywhere Visa':{bg1:'#003087',bg2:'#004db3',accent:'#e8312a',accent2:'#c02820',network:'VISA',chip:'gold',label:'CITI × COSTCO'},
+  'Amazon Prime Visa':{bg1:'#0f1111',bg2:'#1a1f1f',accent:'#ff9900',accent2:'#e47911',network:'VISA',chip:'gold',label:'CHASE × AMAZON'},
+  'Robinhood Gold Card':{bg1:'#0d1a0d',bg2:'#1a2e1a',accent:'#00c040',accent2:'#00a030',network:'VISA',chip:'gold',label:'ROBINHOOD'},
+  'Freedom Unlimited':{bg1:'#1a1200',bg2:'#2e2000',accent:'#ffcc00',accent2:'#e6b800',network:'VISA',chip:'silver',label:'CHASE'},
+  'Discover it Cash Back':{bg1:'#cc3300',bg2:'#e63900',accent:'#ff8844',accent2:'#ff6622',network:'DISC',chip:'silver',label:'DISCOVER'},
+  'Strata Card':{bg1:'#0a1a2a',bg2:'#0f2035',accent:'#00b4cc',accent2:'#008faa',network:'MC',chip:'silver',label:'CITI'},
+  'Apple Card':{bg1:'#1c1c1e',bg2:'#2c2c2e',accent:'#ffffff',accent2:'#aaaaaa',network:'MC',chip:'titanium',label:'APPLE'},
+  'AAA Visa Travel Card':{bg1:'#001f5c',bg2:'#002e8a',accent:'#ff3333',accent2:'#cc0000',network:'VISA',chip:'silver',label:'AAA'},
+  'Ultimate Cash Back':{bg1:'#8b0000',bg2:'#a80000',accent:'#ff4444',accent2:'#dd2222',network:'MC',chip:'silver',label:'SANTANDER'},
+  'PayPal Cashback Mastercard':{bg1:'#003087',bg2:'#001f5c',accent:'#009cde',accent2:'#00739a',network:'MC',chip:'silver',label:'PAYPAL'},
+  'PayPal Credit Card':{bg1:'#001f5c',bg2:'#00297a',accent:'#009cde',accent2:'#0070ba',network:'MC',chip:'silver',label:'PAYPAL'},
+  'Visa Platinum':{bg1:'#1a0a3a',bg2:'#220d4d',accent:'#9944ff',accent2:'#7722dd',network:'VISA',chip:'silver',label:'DCU'},
+  'Home Depot Consumer Card':{bg1:'#d95f00',bg2:'#f06a00',accent:'#ffaa44',accent2:'#ff8800',network:'STORE',chip:'silver',label:'HOME DEPOT'},
+};
+function networkSvg(n){
+  if(n==='VISA')return`<text x="82%" y="72%" font-size="13" font-weight="700" fill="white" opacity="0.9" text-anchor="middle" font-style="italic" font-family="serif">VISA</text>`;
+  if(n==='MC')return`<circle cx="78%" cy="68%" r="11" fill="#eb001b" opacity="0.9"/><circle cx="84%" cy="68%" r="11" fill="#f79e1b" opacity="0.9"/>`;
+  if(n==='AMEX')return`<text x="82%" y="72%" font-size="10" font-weight="700" fill="white" opacity="0.85" text-anchor="middle" font-family="sans-serif">AMEX</text>`;
+  if(n==='DISC')return`<text x="82%" y="72%" font-size="10" font-weight="700" fill="#ff6600" opacity="0.95" text-anchor="middle" font-family="sans-serif">DISCOVER</text>`;
+  return'';
+}
+function makeCardSvg(c,h=130){
+  const t=CARD_THEMES[c.name]||{bg1:'#1a1a2e',bg2:'#16213e',accent:'#e4c97a',accent2:'#c9a84c',network:'VISA',chip:'gold',label:c.issuer||''};
+  const chip=t.chip==='gold'?'#d4af37':t.chip==='titanium'?'#b0b0b0':'#aaa';
+  const chipH=t.chip==='titanium'?'#d0d0d0':'#d4af37';
+  return`<svg viewBox="0 0 320 ${h}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bg${c.id}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${t.bg1}"/><stop offset="100%" style="stop-color:${t.bg2}"/></linearGradient>
+      <radialGradient id="gl${c.id}" cx="30%" cy="30%" r="70%"><stop offset="0%" style="stop-color:${t.accent};stop-opacity:0.22"/><stop offset="100%" style="stop-color:transparent;stop-opacity:0"/></radialGradient>
+    </defs>
+    <rect width="320" height="${h}" fill="url(#bg${c.id})"/>
+    <rect width="320" height="${h}" fill="url(#gl${c.id})"/>
+    <circle cx="260" cy="${h*0.2}" r="${h*0.7}" fill="${t.accent}" opacity="0.06"/>
+    <circle cx="30" cy="${h*0.9}" r="${h*0.5}" fill="${t.accent2}" opacity="0.09"/>
+    <rect x="22" y="${h*0.28}" width="36" height="28" rx="4" fill="${chip}" opacity="0.88"/>
+    <line x1="22" y1="${h*0.28+9}" x2="58" y2="${h*0.28+9}" stroke="${chipH}" stroke-width="0.5" opacity="0.5"/>
+    <line x1="40" y1="${h*0.28}" x2="40" y2="${h*0.28+28}" stroke="${chipH}" stroke-width="0.5" opacity="0.5"/>
+    <text x="22" y="${h*0.72}" font-size="9" font-weight="500" fill="white" opacity="0.65" font-family="monospace" letter-spacing="2">•••• •••• •••• ••••</text>
+    <text x="22" y="${h*0.88}" font-size="8" font-weight="600" fill="white" opacity="0.55" font-family="sans-serif" letter-spacing="1">${t.label}</text>
+    ${networkSvg(t.network)}
+  </svg>`;
+}
+
+// ─── DATA ───
+const INITIAL_CARDS=[{id:1,section:'premium',issuer:'Capital One · Visa Infinite',name:'Venture X Rewards',fee:395,feelabel:'per year',limit:11000,status:'keep',rewards:'2x all · 10x hotels/cars · 5x flights · Priority Pass lounge · $300 travel credit',benefits:['2x miles on every purchase, no category limits','10x miles on hotels & rental cars via C1 Travel','5x miles on flights & vacation rentals via C1 Travel','$300 annual travel credit (C1 Travel bookings)','10,000 anniversary bonus miles every year (~$100)','Priority Pass + Capital One Lounge access (1,300+ lounges)','$120 Global Entry / TSA PreCheck credit every 4 years','No foreign transaction fees'],note:'Credits alone ($400+) more than offset the $395 fee.'},{id:2,section:'premium',issuer:'Chase · Visa Signature',name:'Sapphire Preferred',fee:95,feelabel:'per year',limit:21200,status:'keep',rewards:'5x Chase Travel · 3x dining · Free DashPass · $50 hotel credit · 10% anniversary bonus',benefits:['5x points on Chase Travel bookings','3x points on dining, streaming & online groceries','2x points on all other travel purchases','10% anniversary point bonus on total annual spend','$50 annual hotel credit via Chase Travel','Free DashPass membership through Dec 2027 (~$120 value)','$10/month promo on DoorDash non-restaurant orders','Transfer partners: Hyatt, United, Southwest, BA & more'],note:'DashPass + $10/mo promo + hotel credit = $290 value vs $95 fee.'},{id:3,section:'premium',issuer:'American Express',name:'Blue Cash Preferred',fee:95,feelabel:'per year',limit:35000,status:'keep',rewards:'6% supermarkets & streaming · 3% gas & transit · $120 Disney credit/yr',benefits:['6% cash back at U.S. supermarkets (up to $6,000/yr)','6% on select U.S. streaming subscriptions','3% on U.S. gas stations & transit','1% on all other purchases','Up to $120/yr Disney Bundle credit ($10/month)'],note:'Disney credit nearly offsets the $95 fee. Best grocery card available.'},{id:4,section:'premium',issuer:'Citi · Mastercard',name:'AAdvantage Platinum Select',fee:99,feelabel:'per year',limit:7600,status:'keep',rewards:'2x AA/dining/gas · Free checked bag · Preferred boarding · $180 Turo credit',benefits:['2x AAdvantage miles on AA purchases','2x miles at restaurants & gas stations','First checked bag free on AA domestic flights','Preferred boarding on American Airlines flights','$180 Turo credit through October 2026','80,000 bonus miles already earned'],note:'Free bag saves $70+ round-trip. Redeem on Oneworld partners: Qatar, Cathay, JAL.'},{id:5,section:'membership',issuer:'Citi · Visa Signature',name:'Costco Anywhere Visa',fee:130,feelabel:'Executive membership',limit:4800,status:'keep',rewards:'5% Costco gas · 4% other gas · 3% restaurants & travel · 2% Costco',benefits:['5% cash back on Costco gas purchases','4% on other eligible gas & EV charging (first $7,000/yr)','3% at restaurants & eligible travel incl. Costco Travel','2% on all Costco & Costco.com purchases','Executive membership: 2% annual reward on all Costco spend (capped $1,250)'],note:'Executive membership ($130/yr) pays for itself at ~$3,250 Costco spend/yr.'},{id:6,section:'membership',issuer:'Chase · Visa Signature',name:'Amazon Prime Visa',fee:139,feelabel:'Prime membership',limit:500,status:'keep',rewards:'5% Amazon, Whole Foods & Chase Travel · 2% gas, dining, transit · No FTF',benefits:['5% back at Amazon.com, Amazon Fresh & Whole Foods','5% back on Chase Travel bookings','2% at gas stations, restaurants, local transit & rideshare','No foreign transaction fees'],note:'Low limit — consider requesting a credit limit increase with Chase.'},{id:7,section:'membership',issuer:'Robinhood Credit · Visa',name:'Robinhood Gold Card',fee:50,feelabel:'Gold subscription',limit:10000,status:'keep',rewards:'3% cash back everything · 5% RH Travel · Auto-invest rewards · No FTF',benefits:['3% cash back on all purchases, no category limits','5% on travel booked through Robinhood Travel portal','Redeem into Robinhood brokerage (1¢/pt)','Gold: 3.35% APY on uninvested brokerage cash','Gold: 3% IRA match (up to $225/yr at max contribution)'],note:'Default catch-all card. Gold sub pays for itself 4.5x through IRA match alone.'},{id:8,section:'nofee',issuer:'Chase · Visa',name:'Freedom Unlimited',fee:0,feelabel:'no annual fee',limit:15700,status:'keep',rewards:'1.5% all · 3% dining & drugstores · 5% Chase Travel',benefits:['1.5% cash back on all purchases (unlimited)','3% cash back at drugstores','3% cash back on dining (incl. takeout & delivery)','5% cash back on Chase Travel bookings','Points pool with Sapphire Preferred for extra value'],note:'Best for dining and drugstore spend. Pairs well with Sapphire Preferred.'},{id:9,section:'nofee',issuer:'Discover',name:'Discover it Cash Back',fee:0,feelabel:'no annual fee',limit:5000,status:'keep',rewards:'5% rotating quarterly categories · 1% all else · Cashback Match year 1',benefits:['5% on rotating quarterly categories (activation required)','1% unlimited cash back on all other purchases','Cashback Match: Discover matches all cash back in year 1'],note:'Check current quarter categories — currently 5% at restaurants & home improvement (Q2 2026).'},{id:10,section:'nofee',issuer:'Citi · Mastercard',name:'Strata Card',fee:0,feelabel:'no annual fee',limit:8000,status:'keep',rewards:'5x Citi Travel · 3x supermarkets, gas, transit · 3x self-select category',benefits:['5x points via Citi Travel portal','3x on supermarkets, gas & EV charging, transit','3x on one self-select category per quarter'],note:'Self-select 3x category is a hidden gem.'},{id:11,section:'nofee',issuer:'Apple / Goldman Sachs · Mastercard',name:'Apple Card',fee:0,feelabel:'no annual fee',limit:10000,status:'keep',rewards:'3% Apple & select Apple Pay merchants · 2% all Apple Pay · Daily Cash',benefits:['3% Daily Cash at Apple & select Apple Pay merchants (Uber, Nike, Walgreens)','2% Daily Cash on all other Apple Pay purchases','1% on physical card use','No annual fee, no late fees, no foreign transaction fees'],note:'Use digital/Apple Pay only — physical card earns just 1%.'},{id:12,section:'nofee',issuer:'Comenity · Visa Signature',name:'AAA Visa Travel Card',fee:0,feelabel:'no annual fee',limit:11800,status:'keep',rewards:'5% gas & EV (capped $350/yr) · 3% restaurants, grocery, travel & AAA',benefits:['5% cash back on gas & EV charging (capped at $350/yr)','3% cash back at restaurants, grocery stores, travel & AAA','No annual fee · No foreign transaction fees'],note:'Backup gas & dining card. Gas cash back capped at $350/yr.'},{id:13,section:'nofee',issuer:'Santander · Mastercard',name:'Ultimate Cash Back',fee:0,feelabel:'no annual fee',limit:3000,status:'keep',rewards:'3% first 12 months · 1.5% ongoing · 0% intro APR 15 months',benefits:['3% cash back on all purchases for first 12 months (up to $20,000)','1.5% unlimited cash back on all purchases after promo ends','0% intro APR on purchases for 15 billing cycles'],note:'Keep open for credit history. 1.5% is beaten by Robinhood Gold after the promo ends.'},{id:14,section:'nofee',issuer:'Synchrony · Mastercard',name:'PayPal Cashback Mastercard',fee:0,feelabel:'no annual fee',limit:6000,status:'keep',rewards:'3% PayPal purchases · 1.5% everywhere else',benefits:['3% cash back when checking out with PayPal','1.5% cash back on all other purchases (unlimited)','Cash back redeemable to PayPal balance anytime'],note:'Keep for 3% on PayPal purchases. Note: 3% foreign transaction fee — swap to Venture X or Robinhood abroad.'},{id:15,section:'nofee',issuer:'Synchrony · Mastercard',name:'PayPal Credit Card',fee:0,feelabel:'no annual fee',limit:3000,status:'niche',rewards:'0% APR financing on PayPal purchases · No late fees',benefits:['0% APR for 6 months on PayPal purchases','No late fees on the buy-now-pay-later balance'],note:'Use only for 0% financing on large PayPal purchases. Pay off before promo ends.'},{id:16,section:'nofee',issuer:'DCU · Visa',name:'Visa Platinum',fee:0,feelabel:'no annual fee',limit:10000,status:'passive',rewards:'No rewards · Low APR (~10–13%)',benefits:['Very low variable APR (~10–13%) — best for carrying a balance','No annual fee · No balance transfer fee','No rewards program'],note:'Keep open for credit history and emergency low-rate borrowing.'},{id:17,section:'cut',issuer:'Citi · Store Card',name:'Home Depot Consumer Card',fee:0,feelabel:'no annual fee',limit:4000,status:'cut',rewards:'No rewards · Store-only · Deferred interest at 29.99% APR',benefits:['No rewards program','Store-only use (Home Depot & HomeDepot.com only)','Deferred interest at 29.99% APR if not paid in full by promo end'],note:'Zero rewards, dangerous deferred interest. Use Discover Q2 5% at home improvement instead.'}];
+
+const SECTIONS=[{key:'premium',label:'Premium Cards — Annual Fee'},{key:'membership',label:'Membership-Required Cards'},{key:'nofee',label:'No-Fee Workhorses'},{key:'cut',label:'Recommended to Cut'}];
+let cards=JSON.parse(localStorage.getItem('myCards')||'null')||JSON.parse(JSON.stringify(INITIAL_CARDS));
+let nextId=Math.max(...cards.map(c=>c.id))+1;
+let selectedForRemove=new Set();
+let editingId=null;
+let addNameTimer=null;
+let limitsVisible=false;
+
+function save(){localStorage.setItem('myCards',JSON.stringify(cards))}
+function fmtFull(n){return'$'+n.toLocaleString('en-US')}
+function statusClass(s){return{keep:'status-keep',passive:'status-passive',niche:'status-niche',cut:'status-cut'}[s]||'status-keep'}
+function statusLabel(s){return{keep:'✦ Keep',passive:'— Passive',niche:'◈ Niche Use',cut:'✕ Cut'}[s]||'✦ Keep'}
+
+// ─── PAGE NAVIGATION ───
+function goToCards(){
+  const hp=document.getElementById('home-page');
+  const cp=document.getElementById('cards-page');
+  hp.classList.add('hidden');
+  cp.classList.remove('hidden');
+  cp.classList.add('active');
+  document.body.style.overflow='';
+  renderStats();
+  fetchPageUpdates();
+}
+
+function goHome(){
+  const hp=document.getElementById('home-page');
+  const cp=document.getElementById('cards-page');
+  cp.classList.add('hidden');
+  cp.classList.remove('active');
+  hp.classList.remove('hidden');
+  updateHomeStats();
+}
+
+function updateHomeStats(){
+  const ml=['Prime membership','Executive membership','Gold subscription'];
+  const tc=cards.reduce((a,c)=>a+(c.limit||0),0);
+  const cf=cards.filter(c=>!ml.includes(c.feelabel)).reduce((a,c)=>a+(c.fee||0),0);
+  const mf=cards.filter(c=>ml.includes(c.feelabel)).reduce((a,c)=>a+(c.fee||0),0);
+  document.getElementById('homeStatCards').textContent=cards.length;
+  document.getElementById('homeStatCredit').textContent='$'+tc.toLocaleString('en-US');
+  document.getElementById('homeStatFees').textContent='$'+cf.toLocaleString('en-US');
+  document.getElementById('homeStatCost').textContent='$'+(cf+mf).toLocaleString('en-US');
+}
+
+function renderStats(){
+  const ml=['Prime membership','Executive membership','Gold subscription'];
+  const tc=cards.reduce((a,c)=>a+(c.limit||0),0);
+  const cf=cards.filter(c=>!ml.includes(c.feelabel)).reduce((a,c)=>a+(c.fee||0),0);
+  const mf=cards.filter(c=>ml.includes(c.feelabel)).reduce((a,c)=>a+(c.fee||0),0);
+  document.getElementById('statCards').textContent=cards.length;
+  document.getElementById('statCredit').textContent='$'+tc.toLocaleString('en-US');
+  document.getElementById('statFees').textContent='$'+cf.toLocaleString('en-US');
+  document.getElementById('statMembership').textContent='$'+mf.toLocaleString('en-US');
+  document.getElementById('statTotal').textContent='$'+(cf+mf).toLocaleString('en-US');
+}
+
+function renderCard(c,idx){
+  const svg=makeCardSvg(c,130);
+  return`<div class="card" style="animation-delay:${idx*0.04}s" onclick="openSheet(${c.id})">
+    <div class="card-visual">${svg}</div>
+    <div class="card-body">
+      <div class="card-issuer">${c.issuer||''}</div>
+      <div class="card-name">${c.name}</div>
+      <div class="card-meta">
+        <div><div class="card-fee">${c.fee===0?'$0':'$'+c.fee}</div><div class="card-fee-sub">${c.feelabel||'per year'}</div></div>
+        <span class="card-limit${limitsVisible?'':' hidden'}">${fmtFull(c.limit||0)} limit</span>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-rewards">${c.rewards||''}</div>
+      <div class="card-footer">
+        <span class="status-pill ${statusClass(c.status)}">${statusLabel(c.status)}</span>
+        <span class="card-tap-hint">tap for details ›</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const container=document.getElementById('cardSections');
+  container.innerHTML='';
+  SECTIONS.forEach(sec=>{
+    const sc=cards.filter(c=>c.section===sec.key);
+    if(!sc.length)return;
+    container.insertAdjacentHTML('beforeend',`<div class="section"><div class="section-title">${sec.label}</div><div class="card-grid">${sc.map((c,i)=>renderCard(c,i)).join('')}</div></div>`);
+  });
+  renderStats();
+}
+
+function toggleLimits(){
+  limitsVisible=!limitsVisible;
+  const btn=document.getElementById('limitToggleBtn');
+  btn.textContent=limitsVisible?'👁':'🙈';
+  btn.classList.toggle('hiding',!limitsVisible);
+  document.querySelectorAll('.card-limit').forEach(el=>el.classList.toggle('hidden',!limitsVisible));
+}
+
+// ─── DRAWER ───
+function toggleDrawer(){const o=document.getElementById('drawer').classList.contains('open');o?closeDrawer():openDrawer()}
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('open');document.getElementById('menuBtn').classList.add('active')}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('open');document.getElementById('menuBtn').classList.remove('active')}
+
+// ─── MODALS ───
+function openModal(id){
+  if(id==='remove')buildRemoveList();
+  if(id==='edit')buildEditList();
+  document.getElementById('modal-'+id).classList.add('open');
+}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+
+// ─── DETAIL SHEET ───
+async function openSheet(id){
+  const c=cards.find(x=>x.id===id);if(!c)return;
+  document.getElementById('sheetVisual').innerHTML=makeCardSvg(c,160);
+  document.getElementById('sheetIssuer').textContent=c.issuer||'';
+  document.getElementById('sheetName').textContent=c.name;
+  document.getElementById('sheetMeta').innerHTML=`
+    <div class="sheet-meta-pill"><span class="smp-label">Annual Fee</span><span class="smp-value gold">${c.fee===0?'$0':'$'+c.fee}</span></div>
+    <div class="sheet-meta-pill"><span class="smp-label">Credit Limit</span><span class="smp-value green">${fmtFull(c.limit||0)}</span></div>
+    <div class="sheet-meta-pill"><span class="smp-label">Status</span><span class="smp-value">${statusLabel(c.status)}</span></div>`;
+  document.getElementById('sheetBenefits').innerHTML=(c.benefits||[]).map(b=>`<div class="benefit-item">${b}</div>`).join('');
+  document.getElementById('sheetNote').innerHTML=c.note?`<div class="sheet-note"><div class="sheet-note-label">Advisor Note</div>${c.note}</div>`:'';
+  document.getElementById('aiDetailContent').innerHTML='';
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  fetchCardDetail(c);
+}
+
+async function fetchCardDetail(c){
+  const loading=document.getElementById('aiDetailLoading');
+  const content=document.getElementById('aiDetailContent');
+  loading.classList.remove('hidden');
+  try{
+    const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const prompt=`Friendly financial advisor briefing. Today: ${today}. Card: ${c.name} (${c.issuer||''}).
+Cover: 1) Best use for this card right now, 2) Key rewards rates, 3) If this card has rotating quarterly categories state EXACTLY what's active on ${today} and when they expire, 4) Any expiring credits or time-sensitive promos, 5) One tip.
+Bold (**text**) key numbers/dates. Under 220 words. Conversational paragraphs, no bullet lists.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok){content.innerHTML=`<div style="font-size:11px;color:var(--red);margin-top:8px">API error ${res.status} — try hosting via Netlify for full AI features.</div>`;return;}
+    const data=await res.json();
+    if(data.error){content.innerHTML=`<div style="font-size:11px;color:var(--red);margin-top:8px">${data.error.message}</div>`;return;}
+    let text=data.content[0].text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    const paras=text.split('\n\n').filter(p=>p.trim());
+    const today2=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    content.innerHTML='<div class="sheet-divider"></div><div class="sheet-section-title">Current Status — '+today2+'</div>'+paras.map(p=>`<p class="ai-detail-content" style="margin-bottom:10px">${p.replace(/\n/g,'<br>')}</p>`).join('');
+  }catch(e){
+    content.innerHTML=`<div style="font-size:11px;color:var(--text-dim);margin-top:8px">AI briefing unavailable: ${e.message}</div>`;
+    console.error('Card detail error:',e);
+  }
+  finally{loading.classList.add('hidden')}
+}
+
+function closeSheet(e){
+  if(e&&e.target!==document.getElementById('sheetOverlay'))return;
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ─── ADD ───
+function onNameInput(){
+  clearTimeout(addNameTimer);
+  const name=document.getElementById('f-name').value.trim();
+  document.getElementById('addSubmitBtn').disabled=name.length<2;
+  if(name.length<4)return;
+  addNameTimer=setTimeout(()=>autoFillCard(name),900);
+}
+
+async function autoFillCard(name){
+  const loading=document.getElementById('aiLoading');
+  const fields=document.getElementById('aiFilledFields');
+  loading.classList.remove('hidden');fields.style.display='none';
+  try{
+    const prompt=`Credit card expert. User adding "${name}". Return ONLY valid JSON with NO extra text:
+{"issuer":"e.g. Chase · Visa Signature","fee":95,"feelabel":"per year","section":"premium","status":"keep","rewards":"short one-line max 12 words","benefits":["benefit 1","benefit 2","benefit 3","benefit 4","benefit 5"],"note":"one sentence advisor tip"}
+section must be one of: premium, membership, nofee, cut
+status must be one of: keep, passive, niche, cut
+Pick section and status automatically based on the card type — do not leave defaults if you know the card.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok)throw new Error(`API error ${res.status}`);
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const parsed=extractJSON(data.content[0].text,'object');
+    document.getElementById('f-issuer').value=parsed.issuer||'';
+    document.getElementById('f-fee').value=parsed.fee||0;
+    document.getElementById('f-feelabel').value=parsed.feelabel||'per year';
+    document.getElementById('f-rewards').value=parsed.rewards||'';
+    document.getElementById('f-benefits').value=(parsed.benefits||[]).join('\n');
+    document.getElementById('f-note').value=parsed.note||'';
+    window._autoSection=parsed.section||'nofee';
+    window._autoStatus=parsed.status||'keep';
+    fields.style.display='block';
+    document.getElementById('addSubmitBtn').disabled=false;
+  }catch(e){
+    console.error('Auto-fill error:',e);
+    fields.style.display='block';
+    document.getElementById('addSubmitBtn').disabled=false;
+  }
+  finally{loading.classList.add('hidden')}
+}
+
+function addCard(){
+  const name=document.getElementById('f-name').value.trim();if(!name)return;
+  const newCard={
+    id:nextId++,
+    section:window._autoSection||'nofee',
+    issuer:document.getElementById('f-issuer').value.trim()||'Unknown',
+    name,
+    fee:parseFloat(document.getElementById('f-fee').value)||0,
+    feelabel:document.getElementById('f-feelabel').value.trim()||'per year',
+    limit:parseFloat(document.getElementById('f-limit').value)||0,
+    status:window._autoStatus||'keep',
+    rewards:document.getElementById('f-rewards').value.trim(),
+    benefits:document.getElementById('f-benefits').value.split('\n').map(b=>b.trim()).filter(Boolean),
+    note:document.getElementById('f-note').value.trim()
+  };
+  cards.push(newCard);
+  save();render();closeModal('add');
+  ['f-name','f-issuer','f-fee','f-feelabel','f-limit','f-rewards','f-benefits','f-note'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  document.getElementById('aiFilledFields').style.display='none';
+  document.getElementById('addSubmitBtn').disabled=true;
+  window._autoSection=null;window._autoStatus=null;
+}
+
+// ─── SEARCH ───
+async function runSearch(){
+  const store=document.getElementById('storeInput').value.trim();if(!store)return;
+  const loading=document.getElementById('searchLoading');
+  const results=document.getElementById('searchResults');
+  const goBtn=document.getElementById('searchGoBtn');
+  loading.classList.remove('hidden');results.innerHTML='';goBtn.disabled=true;
+  try{
+    const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    // Keep card summary short — just name and key reward rates
+    const summary=cards.map(c=>`${c.name}: ${c.rewards}`).join('\n');
+    const prompt=`Credit card expert. Date: ${today}. Store: "${store}".
+Cards:
+${summary}
+
+Include current rotating categories active today (Discover it, Chase Freedom, etc.).
+Respond with ONLY a JSON array — no prose, no markdown, no explanation before or after:
+[{"rank":1,"card":"name","rate":"X% cash back","reason":"why","tip":"tip","rotating":true}]
+Top 3 only. Keep reason and tip under 15 words each.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    if(!res.ok){
+      const errText=await res.text();
+      results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span><strong>API error ${res.status}</strong><br><span style="font-size:10px;word-break:break-all">${errText.slice(0,200)}</span></div>`;
+      return;
+    }
+    const data=await res.json();
+    if(data.error){
+      results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span><strong>${data.error.type}</strong><br>${data.error.message}</div>`;
+      return;
+    }
+    const rawText=data.content[0].text;
+    let parsed;
+    try{
+      parsed=extractJSON(rawText,'array');
+    }catch(parseErr){
+      results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>Could not parse response. Raw: <span style="font-size:10px">${rawText.slice(0,150)}</span></div>`;
+      return;
+    }
+    if(!parsed.length){
+      results.innerHTML='<div class="search-placeholder"><span class="ico">⚠</span>No results returned. Try a different store name.</div>';
+      return;
+    }
+    results.innerHTML=parsed.map((r,i)=>`<div class="result-card" style="animation-delay:${i*0.08}s">
+      <div class="result-rank"><span class="rank-badge rank-${r.rank}">${r.rank}</span><span class="rank-name">${r.card}</span><span class="rank-rate">${r.rate}</span></div>
+      ${r.rotating?`<div style="display:inline-flex;align-items:center;gap:4px;background:var(--amber-dim);border:1px solid rgba(224,160,64,0.25);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:500;color:var(--amber);margin-bottom:5px;letter-spacing:0.05em;text-transform:uppercase">⟳ Rotating category</div>`:''}
+      <div class="result-reason">${r.reason}</div>
+      ${r.tip?`<div class="result-tip">💡 ${r.tip}</div>`:''}</div>`).join('');
+  }catch(e){
+    results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span><strong>Error:</strong> ${e.message}<br><span style="font-size:10px;color:var(--text-dim)">Check browser console for details.</span></div>`;
+    console.error('Store search error:',e);
+  }
+  finally{loading.classList.add('hidden');goBtn.disabled=false}
+}
+
+// ─── EDIT ───
+function buildEditList(){
+  document.getElementById('editList').innerHTML=cards.map(c=>`<div class="edit-item" onclick="openEditForm(${c.id})"><div class="edit-item-name">${c.name}</div><div class="edit-item-sub">${c.issuer||''} · ${fmtFull(c.limit||0)} limit · $${c.fee}/yr</div></div>`).join('');
+  showEditList();
+}
+function showEditList(){document.getElementById('editListView').style.display='block';document.getElementById('editFormView').style.display='none';editingId=null}
+function openEditForm(id){
+  editingId=id;const c=cards.find(x=>x.id===id);if(!c)return;
+  const esc=s=>(s||'').replace(/"/g,'&quot;');
+  document.getElementById('editFormContent').innerHTML=`<div class="edit-form-title">✎ ${c.name}</div>
+    <div class="form-group"><label class="form-label">Card name</label><input class="form-input" id="ef-name" value="${esc(c.name)}"></div>
+    <div class="form-group"><label class="form-label">Issuer & network</label><input class="form-input" id="ef-issuer" value="${esc(c.issuer)}"></div>
+    <div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Annual fee ($)</label><input class="form-input" id="ef-fee" type="number" value="${c.fee||0}"></div>
+      <div class="form-group"><label class="form-label">Fee label</label><input class="form-input" id="ef-feelabel" value="${esc(c.feelabel)}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Credit limit ($)</label><input class="form-input" id="ef-limit" type="number" value="${c.limit||0}"></div>
+    <div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Status</label><select class="form-input" id="ef-status"><option value="keep" ${c.status==='keep'?'selected':''}>✦ Keep</option><option value="passive" ${c.status==='passive'?'selected':''}>— Passive</option><option value="niche" ${c.status==='niche'?'selected':''}>◈ Niche</option><option value="cut" ${c.status==='cut'?'selected':''}>✕ Cut</option></select></div>
+      <div class="form-group"><label class="form-label">Section</label><select class="form-input" id="ef-section"><option value="premium" ${c.section==='premium'?'selected':''}>Premium</option><option value="membership" ${c.section==='membership'?'selected':''}>Membership</option><option value="nofee" ${c.section==='nofee'?'selected':''}>No-Fee</option><option value="cut" ${c.section==='cut'?'selected':''}>Cut</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Rewards summary</label><input class="form-input" id="ef-rewards" value="${esc(c.rewards)}"></div>
+    <div class="form-group"><label class="form-label">Benefits (one per line)</label><textarea class="form-textarea" id="ef-benefits">${(c.benefits||[]).join('\n')}</textarea></div>
+    <div class="form-group"><label class="form-label">Advisor note</label><input class="form-input" id="ef-note" value="${esc(c.note)}"></div>`;
+  document.getElementById('editListView').style.display='none';
+  document.getElementById('editFormView').style.display='block';
+}
+function saveEdit(){
+  if(!editingId)return;
+  const idx=cards.findIndex(c=>c.id===editingId);if(idx===-1)return;
+  cards[idx]={...cards[idx],name:document.getElementById('ef-name').value.trim()||cards[idx].name,issuer:document.getElementById('ef-issuer').value.trim(),fee:parseFloat(document.getElementById('ef-fee').value)||0,feelabel:document.getElementById('ef-feelabel').value.trim()||'per year',limit:parseFloat(document.getElementById('ef-limit').value)||0,status:document.getElementById('ef-status').value,section:document.getElementById('ef-section').value,rewards:document.getElementById('ef-rewards').value.trim(),benefits:document.getElementById('ef-benefits').value.split('\n').map(b=>b.trim()).filter(Boolean),note:document.getElementById('ef-note').value.trim()};
+  save();render();buildEditList();
+}
+
+// ─── REMOVE ───
+function buildRemoveList(){
+  selectedForRemove=new Set();updateRemoveCount();
+  document.getElementById('removeList').innerHTML=cards.map(c=>`<div class="remove-item" id="ri-${c.id}" onclick="toggleRemoveItem(${c.id})"><div class="remove-check" id="rc-${c.id}">✓</div><div><div class="remove-item-name">${c.name}</div><div class="remove-item-sub">${c.issuer||''} · ${fmtFull(c.limit||0)} limit</div></div></div>`).join('');
+}
+function toggleRemoveItem(id){const item=document.getElementById('ri-'+id);if(selectedForRemove.has(id)){selectedForRemove.delete(id);item.classList.remove('selected')}else{selectedForRemove.add(id);item.classList.add('selected')}updateRemoveCount()}
+function toggleSelectAll(){if(selectedForRemove.size===cards.length){selectedForRemove.clear();cards.forEach(c=>{const e=document.getElementById('ri-'+c.id);if(e)e.classList.remove('selected')})}else{cards.forEach(c=>{selectedForRemove.add(c.id);const e=document.getElementById('ri-'+c.id);if(e)e.classList.add('selected')})}updateRemoveCount()}
+function updateRemoveCount(){const n=selectedForRemove.size;document.getElementById('removeCount').textContent=n===0?'0 selected':`${n} card${n>1?'s':''} selected`;document.getElementById('removeSubmitBtn').disabled=n===0}
+function openConfirmRemove(){if(selectedForRemove.size===0)return;const names=cards.filter(c=>selectedForRemove.has(c.id)).map(c=>c.name);const n=names.length;document.getElementById('confirmRemoveSub').textContent=n===1?`Remove "${names[0]}" from your portfolio?`:`Remove ${n} cards: ${names.slice(0,3).join(', ')}${n>3?` and ${n-3} more`:''}?`;document.getElementById('confirmRemoveOverlay').classList.add('open')}
+function closeConfirmRemove(){document.getElementById('confirmRemoveOverlay').classList.remove('open')}
+function confirmRemove(){cards=cards.filter(c=>!selectedForRemove.has(c.id));save();render();closeConfirmRemove();closeModal('remove')}
+
+// ─── LIVE UPDATES ───
+async function fetchPageUpdates(){
+  const banner=document.getElementById('updatesBanner');
+  const loading=document.getElementById('updatesLoading');
+  const content=document.getElementById('updatesContent');
+  const dateEl=document.getElementById('updatesDate');
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  dateEl.textContent=today;
+  banner.classList.remove('hidden');
+  content.innerHTML='';
+  loading.classList.remove('hidden');
+  try{
+    const cardNames=cards.map(c=>c.name).join(', ');
+    const prompt=`Credit card expert. Date: ${today}. Cards: ${cardNames}.
+List only time-sensitive items active RIGHT NOW: rotating quarterly 5% categories, credits expiring soon, things to activate.
+ONLY a JSON array, no prose, max 5 items, update and highlight under 12 words each:
+[{"card":"name","update":"one sentence","type":"rotating|expiring|activate|promo","highlight":"key fact"}]`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok)throw new Error(`API error ${res.status}`);
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const parsed=extractJSON(data.content[0].text,'array');
+    if(!parsed||parsed.length===0){banner.classList.add('hidden');return;}
+    const typeIcon={'rotating':'⟳','expiring':'⚠','activate':'☑','promo':'✦'};
+    const typeColor={'rotating':'var(--amber)','expiring':'var(--red)','activate':'var(--blue)','promo':'var(--gold)'};
+    content.innerHTML=parsed.map(u=>{
+      const safeUpdate=u.update||'';
+      const safeHighlight=u.highlight||'';
+      const highlighted=safeHighlight?safeUpdate.replace(safeHighlight,`<span class="update-highlight">${safeHighlight}</span>`):safeUpdate;
+      return`<div class="update-item"><span style="color:${typeColor[u.type]||'var(--gold)'};font-size:11px;flex-shrink:0;margin-top:1px">${typeIcon[u.type]||'✦'}</span><div><span class="update-card-name">${u.card}</span><span class="update-text"> — ${highlighted}</span></div></div>`;
+    }).join('');
+  }catch(e){
+    banner.classList.add('hidden');
+    console.error('Live updates error:',e);
+  }
+  finally{loading.classList.add('hidden')}
+}
+
+// ─── KEYBOARD ───
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeDrawer();
+    document.querySelectorAll('.modal-overlay.open,.confirm-overlay.open').forEach(el=>el.classList.remove('open'));
+    if(document.getElementById('sheetOverlay').classList.contains('open')){document.getElementById('sheetOverlay').classList.remove('open');document.body.style.overflow=''}
+  }
+});
+
+// ─── ROBUST JSON EXTRACTOR ───
+// Finds the first complete, balanced JSON array or object in any string,
+// ignoring any surrounding prose or trailing content Claude may have added.
+function extractJSON(text, type='array'){
+  const open = type==='array' ? '[' : '{';
+  const close = type==='array' ? ']' : '}';
+  const start = text.indexOf(open);
+  if(start === -1) throw new Error('No JSON '+type+' found in response');
+  let depth = 0, inStr = false, escape = false;
+  for(let i = start; i < text.length; i++){
+    const ch = text[i];
+    if(escape){ escape=false; continue; }
+    if(ch==='\\'&&inStr){ escape=true; continue; }
+    if(ch==='"'){ inStr=!inStr; continue; }
+    if(inStr) continue;
+    if(ch===open) depth++;
+    else if(ch===close){ depth--; if(depth===0) return JSON.parse(text.slice(start, i+1)); }
+  }
+  throw new Error('Unbalanced JSON in response');
+}
+
+// ─── LOCAL FILE WARNING ───
+function checkIfLocal(){
+  if(location.protocol==='file:'){
+    const warn=document.createElement('div');
+    warn.style.cssText='position:fixed;bottom:calc(var(--safe-bottom) + 16px);left:50%;transform:translateX(-50%);z-index:999;background:#1c1c26;border:1px solid rgba(224,160,64,0.4);border-radius:12px;padding:12px 16px;font-size:12px;color:#e0a040;font-family:DM Sans,sans-serif;max-width:320px;text-align:center;line-height:1.5;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
+    warn.innerHTML='⚠ <strong style="color:#e4c97a">AI features need hosting.</strong><br>Open this file via <a href="https://app.netlify.com/drop" target="_blank" style="color:#5b8dee;text-decoration:underline">Netlify Drop</a> or any web server — not directly from your computer — for store search, auto-fill, and live updates to work.<br><button onclick="this.parentElement.remove()" style="margin-top:8px;background:none;border:1px solid rgba(224,160,64,0.3);border-radius:8px;color:#e0a040;font-family:DM Sans,sans-serif;font-size:11px;padding:4px 12px;cursor:pointer">Got it</button>';
+    document.body.appendChild(warn);
+  }
+}
+
+// ─── INIT ───
+updateHomeStats();
+render();
+checkIfLocal();
+</script>
+</body>
+</html>
