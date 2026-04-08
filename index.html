@@ -536,6 +536,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div><div class="drawer-btn-title">Remove Cards</div><div class="drawer-btn-sub">Select multiple to remove</div></div>
       </button>
     </div>
+    <div class="drawer-section-label">Settings</div>
+    <div class="drawer-btns">
+      <button class="drawer-btn" onclick="openApiKeyModal();closeDrawer()" style="border-color:rgba(91,141,238,0.2)">
+        <div class="drawer-btn-icon" style="background:var(--blue-dim);border:1px solid rgba(91,141,238,0.25)">🔑</div>
+        <div><div class="drawer-btn-title" id="apiKeyBtnTitle">Set API Key</div><div class="drawer-btn-sub">Required for AI features</div></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- API KEY MODAL -->
+  <div class="modal-overlay" id="apiKeyModal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Anthropic API Key</div>
+      <div class="modal-sub">Saved only on this device — never sent anywhere except directly to Anthropic when you use an AI feature.</div>
+      <div style="background:var(--blue-dim);border:1px solid rgba(91,141,238,0.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#7baaf7;line-height:1.6">
+        Get a free key at <strong>console.anthropic.com</strong> → API Keys → Create Key.
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input class="form-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveApiKeyFromModal()">
+        <div style="font-size:10px;color:var(--red);margin-top:4px;min-height:14px" id="apiKeyError"></div>
+      </div>
+      <button class="btn btn-gold" onclick="saveApiKeyFromModal()" style="margin-top:4px">Save Key & Enable AI</button>
+      <button class="btn btn-cancel" onclick="closeApiKeyModal()">Cancel</button>
+      <div id="forgetKeyRow" style="display:none;margin-top:12px;text-align:center">
+        <button onclick="forgetApiKey()" style="font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px">Forget saved key</button>
+      </div>
+    </div>
   </div>
 
   <nav class="top-nav">
@@ -738,351 +767,94 @@ function makeCardSvg(c,h=130){
 }
 
 // ═══════════════════════════════════════════════════
-// OFFLINE CARD DATABASE — auto-fill without API
+// API KEY MANAGEMENT
 // ═══════════════════════════════════════════════════
-const CARD_DB={
-  // Chase
-  'chase sapphire reserve':{issuer:'Chase · Visa Infinite',fee:550,feelabel:'per year',section:'premium',status:'keep',rewards:'10x hotels & car rentals via Chase Travel · 5x flights · 3x dining · $300 travel credit',benefits:['$300 annual travel credit','10x on hotels & car rentals via Chase Travel','5x on flights via Chase Travel','3x on dining & travel worldwide','Priority Pass lounge access (1,300+ lounges)','$120 Global Entry/TSA PreCheck credit','Transfer partners: Hyatt, United, Southwest, BA & more'],note:'The $300 travel credit effectively reduces the fee to $250. Best for frequent travelers.'},
-  'chase sapphire preferred':{issuer:'Chase · Visa Signature',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'5x Chase Travel · 3x dining & streaming · 2x travel · $50 hotel credit · DashPass',benefits:['5x points on Chase Travel','3x on dining, streaming & online groceries','2x on all other travel','$50 annual hotel credit via Chase Travel','Free DashPass through Dec 2027','10% anniversary point bonus'],note:'Best entry-level travel card. DashPass + hotel credit nearly offset the $95 fee.'},
-  'chase freedom unlimited':{issuer:'Chase · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'1.5% all purchases · 3% dining & drugstores · 5% Chase Travel',benefits:['1.5% unlimited cash back on all purchases','3% cash back at drugstores','3% cash back on dining including takeout','5% cash back on Chase Travel bookings','Points pool with Sapphire for extra value'],note:'Excellent catch-all card. Pairs perfectly with Chase Sapphire for a trifecta setup.'},
-  'chase freedom flex':{issuer:'Chase · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'5% rotating quarterly categories · 3% dining & drugstores · 1.5% all else',benefits:['5% on rotating quarterly categories (up to $1,500/quarter)','3% cash back at restaurants and drugstores','1.5% on all other purchases','$200 welcome bonus after $500 spend in 3 months'],note:'Best for maximizing rotating 5% categories. Combine with Sapphire Preferred for full value.'},
-  'amazon prime visa':{issuer:'Chase · Visa Signature',fee:139,feelabel:'Prime membership',section:'membership',status:'keep',rewards:'5% Amazon, Whole Foods & Chase Travel · 2% gas, dining, transit',benefits:['5% back at Amazon, Amazon Fresh & Whole Foods','5% back on Chase Travel bookings','2% at gas stations, restaurants & transit','No foreign transaction fees','Visa Signature travel protections'],note:'No-brainer if you already pay for Prime. Best card for Amazon & Whole Foods.'},
-  'chase ink business preferred':{issuer:'Chase · Visa',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'3x travel, shipping, advertising & telecom · 1x all else',benefits:['3x on travel, shipping, advertising & telecom (up to $150k/yr)','1x on all other purchases','100k welcome bonus after $8k spend in 3 months','Cell phone protection up to $1,000'],note:'Best business travel card for Chase ecosystem users.'},
+function getApiKey(){return localStorage.getItem('myCardsApiKey')||''}
+function saveApiKey(k){localStorage.setItem('myCardsApiKey',k.trim())}
+function clearApiKey(){localStorage.removeItem('myCardsApiKey')}
 
-  // Amex
-  'amex blue cash preferred':{issuer:'American Express',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'6% supermarkets & streaming · 3% gas & transit · $120 Disney credit',benefits:['6% cash back at US supermarkets (up to $6,000/yr)','6% on select streaming services','3% at US gas stations & transit','Up to $120 Disney Bundle credit ($10/month)','Return protection & Amex Offers'],note:'Best grocery card available. Disney credit nearly offsets the $95 fee.'},
-  'amex blue cash everyday':{issuer:'American Express',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'3% supermarkets, online shopping & gas · 1% all else',benefits:['3% cash back at US supermarkets (up to $6,000/yr)','3% on online retail purchases (up to $6,000/yr)','3% at US gas stations (up to $6,000/yr)','No annual fee'],note:'Free version of the Blue Cash Preferred. Good if you spend under the caps.'},
-  'amex gold':{issuer:'American Express',fee:325,feelabel:'per year',section:'premium',status:'keep',rewards:'4x dining & US supermarkets · 3x flights · $240 dining credit · $120 Uber credit',benefits:['4x points at restaurants worldwide','4x at US supermarkets (up to $25,000/yr)','3x on flights booked directly','$240 annual dining credit ($20/month at select restaurants)','$120 Uber Cash annually'],note:'Best dining & grocery rewards card. Credits effectively reduce the fee significantly.'},
-  'amex platinum':{issuer:'American Express',fee:695,feelabel:'per year',section:'premium',status:'keep',rewards:'5x flights & hotels · Centurion Lounge · $200 airline credit · $200 hotel credit',benefits:['5x on flights booked directly or via Amex Travel','5x on prepaid hotels via Amex Travel','Centurion Lounge + Priority Pass access','$200 annual airline fee credit','$200 hotel credit','$240 digital entertainment credit','Global Entry/TSA PreCheck credit'],note:'Premium card for frequent travelers. Only worth it if you use most of the credits.'},
+function apiHeaders(){
+  const key=getApiKey();
+  const h={'Content-Type':'application/json','anthropic-version':'2023-06-01'};
+  if(key)h['x-api-key']=key;
+  else h['anthropic-dangerous-direct-browser-access']='true';
+  return h;
+}
 
-  // Capital One
-  'capital one venture x':{issuer:'Capital One · Visa Infinite',fee:395,feelabel:'per year',section:'premium',status:'keep',rewards:'2x all · 10x hotels/cars · 5x flights via C1 Travel · $300 travel credit',benefits:['2x miles on every purchase','10x miles on hotels & rental cars via C1 Travel','5x on flights via C1 Travel','$300 annual travel credit','10,000 anniversary bonus miles','Priority Pass + Capital One Lounge access'],note:'Credits alone more than offset the $395 fee. Best value premium travel card.'},
-  'capital one venture':{issuer:'Capital One · Visa',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'2x miles on everything · 5x hotels & rental cars via C1 Travel',benefits:['2x miles on every purchase','5x on hotels & rental cars via C1 Travel','Up to $120 Global Entry/TSA PreCheck credit','Transfer to 15+ travel partners'],note:'Simple flat-rate travel card. Great if you want 2x on everything without tracking categories.'},
-  'capital one quicksilver':{issuer:'Capital One · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'1.5% cash back on all purchases · no categories needed',benefits:['1.5% unlimited cash back on all purchases','No annual fee, no foreign transaction fees','$200 welcome bonus after $500 spend'],note:'Simple, no-fuss flat rate card. Good catch-all if you prefer cash back.'},
-  'capital one savor':{issuer:'Capital One · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'3% dining, entertainment & groceries · 1% all else',benefits:['3% cash back at restaurants','3% on entertainment & popular streaming','3% at grocery stores (excl. Walmart & Target)','1% on all other purchases'],note:'Excellent no-fee dining and entertainment card.'},
+function requireApiKey(cb){
+  if(getApiKey()||location.hostname.includes('claude.ai')){cb();return;}
+  openApiKeyModal(cb);
+}
 
-  // Citi
-  'citi strata premier':{issuer:'Citi · Mastercard',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'3x hotels, air, restaurants, supermarkets & gas · $100 hotel benefit',benefits:['3x on hotels, air travel, restaurants, supermarkets, gas & EV charging','10x via Citi Travel portal','$100 annual hotel benefit','Transfer partners: AA, Air France, Turkish & more'],note:'Excellent mid-tier travel card with broad 3x categories.'},
-  'citi double cash':{issuer:'Citi · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'2% cash back on everything (1% when you buy + 1% when you pay)',benefits:['2% unlimited cash back on all purchases','No annual fee','0% intro APR on balance transfers for 18 months'],note:'Best simple 2% flat-rate card available with no annual fee.'},
-  'citi custom cash':{issuer:'Citi · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'5% on your top spend category each month (up to $500) · 1% all else',benefits:['5% cash back on top eligible spend category each billing cycle','Categories include restaurants, gas, groceries, travel, streaming & more','1% on all other purchases','No annual fee'],note:'Smart card that auto-detects your highest spend category.'},
+function openApiKeyModal(cb){
+  window._apiKeyCb=cb||null;
+  document.getElementById('apiKeyModal').classList.add('open');
+}
+function closeApiKeyModal(){document.getElementById('apiKeyModal').classList.remove('open')}
 
-  // Discover
-  'discover it cash back':{issuer:'Discover',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'5% rotating quarterly categories · 1% all else · Cashback Match year 1',benefits:['5% on rotating quarterly categories (activation required)','1% unlimited cash back on all other purchases','Cashback Match: Discover matches all cash back in year 1','No annual fee, no foreign transaction fee'],note:'Q2 2026 categories: restaurants & home improvement stores through June 30.'},
-  'discover it chrome':{issuer:'Discover',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'2% cash back at gas stations & restaurants (up to $1,000/quarter) · 1% all else',benefits:['2% at gas stations & restaurants (up to $1,000 combined per quarter)','1% on all other purchases','Cashback Match in year 1','No annual fee'],note:'Good for gas and dining without rotating category hassle.'},
-
-  // Wells Fargo
-  'wells fargo active cash':{issuer:'Wells Fargo · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'2% cash rewards on all purchases',benefits:['2% unlimited cash rewards on every purchase','$200 welcome bonus after $500 spend in 3 months','0% intro APR for 15 months','No annual fee'],note:'Best simple 2% flat-rate alternative to Citi Double Cash.'},
-  'wells fargo autograph':{issuer:'Wells Fargo · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'3x restaurants, travel, gas, transit & streaming · 1x all else',benefits:['3x at restaurants, travel, gas stations, transit, streaming & phone plans','1x on all other purchases','$200 welcome bonus after $1,000 spend in 3 months','No annual fee'],note:'Excellent no-fee card with broad 3x categories.'},
-
-  // Bank of America
-  'bank of america travel rewards':{issuer:'Bank of America · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'1.5x points on all purchases · no blackout dates',benefits:['1.5x points on every purchase','No annual fee, no foreign transaction fees','Points redeemable for travel statement credits','Preferred Rewards members earn up to 2.625x'],note:'Best for Bank of America Preferred Rewards members who can boost to 2.625x.'},
-  'bank of america premium rewards':{issuer:'Bank of America · Visa',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'2x travel & dining · 1.5x all else · $100 airline incidentals credit',benefits:['2x points on travel & dining','1.5x on all other purchases','$100 airline incidentals credit','$100 TSA PreCheck/Global Entry credit','Preferred Rewards boost up to 3.5x on travel & dining'],note:'Exceptionally valuable for Bank of America Preferred Rewards Platinum Honors members.'},
-
-  // PayPal
-  'paypal cashback mastercard':{issuer:'Synchrony · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'3% when checking out with PayPal · 1.5% everywhere else',benefits:['3% cash back when using PayPal checkout','1.5% on all other purchases','No annual fee, no cap on earnings','Cash back redeemable to PayPal balance instantly'],note:'3% foreign transaction fee — avoid using abroad.'},
-  'paypal credit':{issuer:'Synchrony · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'niche',rewards:'0% APR financing on PayPal purchases for 6 months',benefits:['0% APR for 6 months on PayPal purchases','No late fees on BNPL balance','Pay in 45 or monthly plan options'],note:'Use only for 0% financing on large PayPal purchases. Pay off before promo ends.'},
-
-  // Airline cards
-  'delta skymiles gold':{issuer:'American Express',fee:150,feelabel:'per year',section:'premium',status:'keep',rewards:'2x Delta & dining · Free first checked bag · Priority boarding',benefits:['2x SkyMiles on Delta purchases & dining','Free first checked bag on Delta flights','Priority boarding','15% off in-flight purchases','$200 Delta travel credit after $10k annual spend'],note:'Free bag alone justifies the fee if you fly Delta even 2x per year.'},
-  'united explorer':{issuer:'Chase · Visa',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'2x United & dining · Free first checked bag · Priority boarding',benefits:['2x miles on United purchases, dining & hotel stays','Free first checked bag','Priority boarding','2 United Club one-time passes per year','25% back on in-flight purchases'],note:'Free bag saves $35+ per trip. Pairs well with Chase Sapphire for United transfers.'},
-  'southwest rapid rewards plus':{issuer:'Chase · Visa',fee:69,feelabel:'per year',section:'premium',status:'keep',rewards:'2x Southwest purchases · 1x all else · 3,000 anniversary points',benefits:['2x points on Southwest purchases','2x on hotel & car rental partners','3,000 anniversary bonus points','No foreign transaction fees'],note:'Work toward the Companion Pass — most valuable perk in airline credit cards.'},
-
-  // Hotel cards
-  'world of hyatt':{issuer:'Chase · Visa',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'4x Hyatt hotels · 2x dining, flights & gym · 1 free night/year',benefits:['4x points at Hyatt hotels','2x on dining, flights, gym & transit','1 free night certificate annually (Cat 1-4)','Discoverist status automatically','5 qualifying nights credit per year'],note:'Hyatt points are among the most valuable hotel points. Free night offsets most of the fee.'},
-  'marriott bonvoy boundless':{issuer:'Chase · Visa',fee:95,feelabel:'per year',section:'premium',status:'keep',rewards:'6x Marriott hotels · 3x dining & groceries · 1 free night/year',benefits:['6x points at Marriott properties','3x on dining, groceries & gas','1 free night certificate annually (up to 35k points)','Silver Elite status automatically'],note:'Free night certificate easily covers the $95 annual fee.'},
-
-  // Store cards
-  'amazon store card':{issuer:'Synchrony · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'5% Amazon with Prime · 3% without Prime · 1% elsewhere',benefits:['5% back at Amazon with Prime membership','3% back without Prime','Special financing on Amazon purchases'],note:'Only useful at Amazon. Use Amazon Prime Visa instead for better overall value.'},
-  'target redcard':{issuer:'TD Bank · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'5% off all Target purchases · free shipping · extended returns',benefits:['5% discount at Target in-store and online','Free standard shipping on Target.com','Extended return window (30 extra days)','No annual fee'],note:'One of the best store cards — 5% is automatic, no activation needed.'},
-  'costco anywhere visa':{issuer:'Citi · Visa Signature',fee:130,feelabel:'Executive membership',section:'membership',status:'keep',rewards:'5% Costco gas · 4% other gas · 3% restaurants & travel · 2% Costco',benefits:['5% at Costco gas stations','4% on other gas & EV charging (first $7,000/yr)','3% at restaurants & eligible travel','2% at Costco & Costco.com','Executive 2% annual reward on Costco purchases'],note:'Executive membership pays for itself at ~$3,250 in annual Costco spending.'},
-  'home depot consumer card':{issuer:'Citi · Store Card',fee:0,feelabel:'no annual fee',section:'cut',status:'cut',rewards:'No rewards · Deferred interest financing only',benefits:['No rewards program','Store-only use at Home Depot & HomeDepot.com','Deferred interest at 29.99% if not paid in full'],note:'Avoid — no rewards and dangerous deferred interest. Use Discover 5% during home improvement quarters instead.'},
-
-  // DCU / Credit Union
-  'dcu visa platinum':{issuer:'DCU · Visa',fee:0,feelabel:'no annual fee',section:'nofee',status:'passive',rewards:'No rewards · Low APR (~10–13%)',benefits:['Very low variable APR (~10–13%)','No annual fee, no balance transfer fee','No rewards — best for carrying a balance at low cost'],note:'Keep open for credit history and emergency low-rate borrowing only.'},
-
-  // Robinhood
-  'robinhood gold card':{issuer:'Robinhood Credit · Visa',fee:50,feelabel:'Gold subscription',section:'membership',status:'keep',rewards:'3% cash back on everything · 5% via RH Travel',benefits:['3% cash back on all purchases with no category limits','5% on travel booked via Robinhood Travel','Redeem into Robinhood brokerage (1¢/pt)','Gold: 3.35% APY on uninvested brokerage cash','Gold: 3% IRA match up to $225/yr'],note:'Best flat-rate card. Gold subscription pays for itself 4.5x through IRA match.'},
-
-  // Apple
-  'apple card':{issuer:'Apple / Goldman Sachs · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'3% Apple & select Apple Pay merchants · 2% all Apple Pay · 1% physical card',benefits:['3% Daily Cash at Apple & select merchants (Uber, Nike, Walgreens, Exxon)','2% Daily Cash on all Apple Pay purchases','1% on physical card use','No annual fee, no late fees, no foreign transaction fees'],note:'Use Apple Pay only — physical card earns just 1%.'},
-
-  // AAA
-  'aaa visa travel':{issuer:'Comenity · Visa Signature',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'5% gas & EV (capped $350/yr) · 3% restaurants, grocery, travel & AAA',benefits:['5% on gas & EV charging (capped at $350/yr)','3% at restaurants, grocery stores, travel & AAA','No annual fee, no foreign transaction fees'],note:'Gas cash back capped at $350/yr (~$7,000 in gas spend).'},
-
-  // Santander
-  'santander ultimate cash back':{issuer:'Santander · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'3% first 12 months · 1.5% ongoing · 0% intro APR 15 months',benefits:['3% cash back on all purchases first 12 months (up to $20,000)','1.5% unlimited thereafter','0% intro APR for 15 billing cycles','No annual fee, no foreign transaction fees'],note:'Keep open for credit history after promo ends — 1.5% is beaten by Robinhood Gold.'},
-
-  // Misc
-  'bilt mastercard':{issuer:'Wells Fargo · Mastercard',fee:0,feelabel:'no annual fee',section:'nofee',status:'keep',rewards:'1x rent (no fee!) · 3x dining · 2x travel · 1x all else',benefits:['1x points on rent payments with no transaction fee','3x on dining','2x on travel','1x on all other purchases','Transfer partners: Hyatt, United, AA, Air France & more'],note:'The only card that earns points on rent payments. Hyatt transfer makes it extremely valuable.'},
-  'citi aadvantage platinum select':{issuer:'Citi · Mastercard',fee:99,feelabel:'per year',section:'premium',status:'keep',rewards:'2x AA, dining & gas · Free checked bag · Preferred boarding',benefits:['2x AAdvantage miles on AA, dining & gas','Free first checked bag on AA domestic flights','Preferred boarding on AA flights','25% savings on in-flight Wi-Fi','$180 Turo credit through Oct 2026'],note:'Free bag saves $70+ round-trip. Redeem miles on Oneworld partners.'},
-};
-
-function lookupCard(name){
-  const key=name.toLowerCase().trim()
-    .replace(/®|™|℠/g,'')
-    .replace(/card$/,'').trim()
-    .replace(/credit$/,'').trim()
-    .replace(/\s+/g,' ');
-  // Exact match first
-  if(CARD_DB[key])return CARD_DB[key];
-  // Partial match
-  for(const k of Object.keys(CARD_DB)){
-    if(key.includes(k)||k.includes(key))return CARD_DB[k];
+function saveApiKeyFromModal(){
+  const val=document.getElementById('apiKeyInput').value.trim();
+  if(!val.startsWith('sk-ant-')){
+    document.getElementById('apiKeyError').textContent='Key should start with sk-ant- — check and try again.';
+    return;
   }
-  // Fuzzy — find best overlap
-  let best=null,bestScore=0;
-  const keyWords=key.split(' ');
-  for(const [k,v] of Object.entries(CARD_DB)){
-    const kWords=k.split(' ');
-    const score=keyWords.filter(w=>kWords.includes(w)).length;
-    if(score>bestScore){bestScore=score;best=v;}
+  saveApiKey(val);
+  document.getElementById('apiKeyInput').value='';
+  document.getElementById('apiKeyError').textContent='';
+  closeApiKeyModal();
+  updateApiKeyBtn();
+  showToast('✓ API key saved — AI features ready','green');
+  if(window._apiKeyCb){window._apiKeyCb();window._apiKeyCb=null;}
+}
+
+function forgetApiKey(){
+  clearApiKey();
+  updateApiKeyBtn();
+  showToast('API key removed','neutral');
+}
+
+function updateApiKeyBtn(){
+  const has=!!getApiKey();
+  const el=document.getElementById('apiKeyBtnTitle');
+  const row=document.getElementById('forgetKeyRow');
+  if(el)el.textContent=has?'✓ API Key Saved':'Set API Key';
+  if(row)row.style.display=has?'block':'none';
+}
+
+function showToast(msg,type){
+  const t=document.createElement('div');
+  const bg=type==='green'?'#1a2e1a':type==='red'?'#2e1a1a':'#1c1c26';
+  const border=type==='green'?'rgba(76,175,130,0.4)':type==='red'?'rgba(224,96,96,0.4)':'rgba(255,255,255,0.12)';
+  const color=type==='green'?'#4caf82':type==='red'?'#e06060':'var(--text-muted)';
+  t.style.cssText=`position:fixed;bottom:calc(var(--safe-bottom) + 20px);left:50%;transform:translateX(-50%);z-index:999;background:${bg};border:1px solid ${border};border-radius:12px;padding:10px 20px;font-size:13px;color:${color};font-family:'DM Sans',sans-serif;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);transition:opacity 0.4s`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400)},2500);
+}
+
+// ═══════════════════════════════════════════════════
+// ROBUST JSON EXTRACTOR
+// ═══════════════════════════════════════════════════
+function extractJSON(text,type='array'){
+  const open=type==='array'?'[':'{';
+  const close=type==='array'?']':'}';
+  const start=text.indexOf(open);
+  if(start===-1)throw new Error('No JSON '+type+' found');
+  let depth=0,inStr=false,escape=false;
+  for(let i=start;i<text.length;i++){
+    const ch=text[i];
+    if(escape){escape=false;continue;}
+    if(ch==='\\'&&inStr){escape=true;continue;}
+    if(ch==='"'){inStr=!inStr;continue;}
+    if(inStr)continue;
+    if(ch===open)depth++;
+    else if(ch===close){depth--;if(depth===0)return JSON.parse(text.slice(start,i+1));}
   }
-  return bestScore>=2?best:null;
+  throw new Error('Unbalanced JSON');
 }
 
 // ═══════════════════════════════════════════════════
-// OFFLINE STORE SEARCH ENGINE
-// ═══════════════════════════════════════════════════
-// Spending category keywords → what each category matches
-const CATEGORY_KEYWORDS={
-  grocery:['grocery','grocer','supermarket','whole foods','trader joe','safeway','kroger','wegmans','publix','aldi','heb','sprouts','food','market'],
-  dining:['restaurant','dining','doordash','uber eats','grubhub','chipotle','mcdonald','starbucks','coffee','cafe','sushi','pizza','burger','taco','food delivery','eat'],
-  gas:['gas','fuel','shell','exxon','mobil','bp','chevron','sunoco','speedway','wawa','costco gas','ev charging','electric vehicle charge'],
-  travel:['hotel','flight','airline','airbnb','vrbo','delta','united','american airlines','southwest','spirit','frontier','jetblue','marriott','hilton','hyatt','ihg','airport','car rental','hertz','enterprise','avis','uber','lyft','cruise'],
-  amazon:['amazon','amazon.com','amazon fresh','audible','prime video','whole foods'],
-  costco:['costco'],
-  apple:['apple store','apple.com','app store','itunes','apple pay','nike','walgreens','uber','exxon'],
-  streaming:['netflix','hulu','disney','spotify','apple tv','hbo','youtube premium','paramount','peacock','streaming'],
-  drugstore:['walgreens','cvs','rite aid','pharmacy','drug store'],
-  transit:['uber','lyft','subway','metro','bus','train','transit','rideshare','commute'],
-  'home improvement':['home depot','lowe','hardware store','home improvement','lumber','paint','plumbing'],
-  online:['online shopping','amazon','etsy','ebay','walmart.com','target.com','shopify'],
-  wholesale:['costco','sam\'s club','bj\'s','wholesale'],
-};
-
-// Current rotating categories — update this quarterly
-const ROTATING_NOW={
-  // Q2 2026 (April 1 – June 30, 2026)
-  'Discover it Cash Back':{rate:'5%',category:'restaurants & home improvement stores',expires:'June 30, 2026',matches:['restaurant','dining','food','home depot','lowe','hardware','home improvement']},
-  'Freedom Unlimited':{rate:'5%',category:'Amazon & Chase Travel',expires:'June 30, 2026',matches:['amazon','chase travel']},
-};
-
-function detectCategory(store){
-  const s=store.toLowerCase();
-  for(const[cat,keywords]of Object.entries(CATEGORY_KEYWORDS)){
-    if(keywords.some(k=>s.includes(k)))return cat;
-  }
-  return'general';
-}
-
-function getCardRate(card,store,category){
-  const n=card.name;
-  const s=store.toLowerCase();
-  const r=card.rewards||'';
-
-  // Check rotating categories first
-  if(ROTATING_NOW[n]){
-    const rot=ROTATING_NOW[n];
-    if(rot.matches.some(m=>s.includes(m)||category===m||
-      (m==='restaurant'&&category==='dining')||
-      (m==='home improvement'&&category==='home improvement')||
-      (m==='food'&&category==='dining'))){
-      return{rate:rot.rate,label:rot.category,rotating:true,expires:rot.expires,numeric:5};
-    }
-  }
-
-  // Card-specific logic
-  if(n==='Amazon Prime Visa'&&(category==='amazon'||s.includes('whole foods')||s.includes('amazon')))return{rate:'5%',label:'Amazon & Whole Foods',numeric:5};
-  if(n==='Amazon Prime Visa'&&(category==='gas'||category==='dining'||category==='transit'))return{rate:'2%',label:'gas, dining & transit',numeric:2};
-  if(n==='Costco Anywhere Visa'&&category==='costco')return{rate:'2%',label:'Costco purchases',numeric:2};
-  if(n==='Costco Anywhere Visa'&&s.includes('costco'))return{rate:'2%',label:'Costco',numeric:2};
-  if(n==='Costco Anywhere Visa'&&(category==='gas'||s.includes('costco gas')))return{rate:s.includes('costco')?'5%':'4%',label:'gas',numeric:s.includes('costco')?5:4};
-  if(n==='Costco Anywhere Visa'&&(category==='dining'||category==='travel'))return{rate:'3%',label:'restaurants & travel',numeric:3};
-  if(n==='Apple Card'&&(s.includes('apple')||s.includes('uber')||s.includes('nike')||s.includes('walgreens')||s.includes('exxon')))return{rate:'3%',label:'Apple Pay merchants',numeric:3};
-  if(n==='Blue Cash Preferred'&&category==='grocery')return{rate:'6%',label:'supermarkets',numeric:6};
-  if(n==='Blue Cash Preferred'&&category==='streaming')return{rate:'6%',label:'streaming',numeric:6};
-  if(n==='Blue Cash Preferred'&&(category==='gas'||category==='transit'))return{rate:'3%',label:'gas & transit',numeric:3};
-  if(n==='Sapphire Preferred'&&category==='travel')return{rate:'5x pts',label:'Chase Travel',numeric:4};
-  if(n==='Sapphire Preferred'&&category==='dining')return{rate:'3x pts',label:'dining',numeric:3};
-  if(n==='Freedom Unlimited'&&(category==='dining'||category==='drugstore'))return{rate:'3%',label:'dining & drugstores',numeric:3};
-  if(n==='Freedom Unlimited'&&category==='travel')return{rate:'5%',label:'Chase Travel',numeric:5};
-  if(n==='PayPal Cashback Mastercard'&&(s.includes('paypal')||s.includes('ebay')))return{rate:'3%',label:'PayPal checkout',numeric:3};
-  if(n==='AAdvantage Platinum Select'&&(s.includes('american airline')||s.includes('aa.com')))return{rate:'2x miles',label:'AA purchases',numeric:2};
-  if(n==='AAdvantage Platinum Select'&&(category==='dining'||category==='gas'))return{rate:'2x miles',label:'dining & gas',numeric:2};
-  if(n==='Robinhood Gold Card')return{rate:'3%',label:'all purchases',numeric:3};
-  if(n==='Strata Card'&&(category==='grocery'||category==='gas'||category==='transit'))return{rate:'3x pts',label:'groceries, gas & transit',numeric:3};
-  if(n==='AAA Visa Travel Card'&&category==='gas')return{rate:'5%',label:'gas (capped $350/yr)',numeric:5};
-  if(n==='AAA Visa Travel Card'&&(category==='dining'||category==='grocery'||category==='travel'))return{rate:'3%',label:'dining, grocery & travel',numeric:3};
-  if(n==='Discover it Cash Back')return{rate:'1%',label:'non-rotating purchases',numeric:1};
-
-  // Parse rewards string for a generic rate
-  const pct=r.match(/(\d+(?:\.\d+)?)%/);
-  if(pct)return{rate:pct[0],label:'on this purchase',numeric:parseFloat(pct[1])};
-  const pts=r.match(/(\d+)x/);
-  if(pts)return{rate:pts[0]+' pts',label:'on this purchase',numeric:parseFloat(pts[1])};
-  return{rate:'1%',label:'base rate',numeric:1};
-}
-
-function runSearch(){
-  const store=document.getElementById('storeInput').value.trim();
-  if(!store)return;
-  const results=document.getElementById('searchResults');
-  const category=detectCategory(store);
-
-  // Score every card
-  const scored=cards.map(c=>{
-    const r=getCardRate(c,store,category);
-    return{card:c,result:r};
-  }).sort((a,b)=>b.result.numeric-a.result.numeric);
-
-  const top3=scored.slice(0,3);
-
-  results.innerHTML=top3.map((item,i)=>{
-    const r=item.result;
-    const rank=i+1;
-    const why=r.rotating
-      ?`Currently earning ${r.rate} on ${r.label} — rotating category active through ${r.expires}.`
-      :`Earns ${r.rate} on ${r.label} at ${store}.`;
-    const tip=r.rotating
-      ?`⟳ Rotating category — activate if you haven't already, expires ${r.expires}.`
-      :rank===1?`Use this as your go-to card at ${store} for maximum rewards.`
-      :`Good backup if your top card isn't accepted.`;
-    return`<div class="result-card" style="animation-delay:${i*0.08}s">
-      <div class="result-rank">
-        <span class="rank-badge rank-${rank}">${rank}</span>
-        <span class="rank-name">${item.card.name}</span>
-        <span class="rank-rate">${r.rate}</span>
-      </div>
-      ${r.rotating?`<div style="display:inline-flex;align-items:center;gap:4px;background:var(--amber-dim);border:1px solid rgba(224,160,64,0.25);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:500;color:var(--amber);margin-bottom:5px;letter-spacing:0.05em;text-transform:uppercase">⟳ Rotating category</div>`:''}
-      <div class="result-reason">${why}</div>
-      <div class="result-tip">💡 ${tip}</div>
-    </div>`;
-  }).join('');
-}
-
-// ═══════════════════════════════════════════════════
-// OFFLINE AUTO-FILL
-// ═══════════════════════════════════════════════════
-let addNameTimer=null;
-function onNameInput(){
-  clearTimeout(addNameTimer);
-  const name=document.getElementById('f-name').value.trim();
-  document.getElementById('addSubmitBtn').disabled=name.length<2;
-  if(name.length<3)return;
-  addNameTimer=setTimeout(()=>autoFillCard(name),600);
-}
-
-function autoFillCard(name){
-  const fields=document.getElementById('aiFilledFields');
-  const match=lookupCard(name);
-  if(match){
-    document.getElementById('f-issuer').value=match.issuer||'';
-    document.getElementById('f-fee').value=match.fee||0;
-    document.getElementById('f-feelabel').value=match.feelabel||'per year';
-    document.getElementById('f-rewards').value=match.rewards||'';
-    document.getElementById('f-benefits').value=(match.benefits||[]).join('\n');
-    document.getElementById('f-note').value=match.note||'';
-    window._autoSection=match.section||'nofee';
-    window._autoStatus=match.status||'keep';
-    fields.style.display='block';
-    document.getElementById('addSubmitBtn').disabled=false;
-  } else {
-    // Unknown card — show blank editable fields so user can fill in
-    document.getElementById('f-issuer').value='';
-    document.getElementById('f-fee').value=0;
-    document.getElementById('f-feelabel').value='per year';
-    document.getElementById('f-rewards').value='';
-    document.getElementById('f-benefits').value='';
-    document.getElementById('f-note').value='';
-    window._autoSection='nofee';
-    window._autoStatus='keep';
-    fields.style.display='block';
-    document.getElementById('addSubmitBtn').disabled=false;
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// OFFLINE CARD DETAIL
-// ═══════════════════════════════════════════════════
-function openSheet(id){
-  const c=cards.find(x=>x.id===id);if(!c)return;
-  document.getElementById('sheetVisual').innerHTML=makeCardSvg(c,160);
-  document.getElementById('sheetIssuer').textContent=c.issuer||'';
-  document.getElementById('sheetName').textContent=c.name;
-  document.getElementById('sheetMeta').innerHTML=`
-    <div class="sheet-meta-pill"><span class="smp-label">Annual Fee</span><span class="smp-value gold">${c.fee===0?'$0':'$'+c.fee}</span></div>
-    <div class="sheet-meta-pill"><span class="smp-label">Credit Limit</span><span class="smp-value green">${fmtFull(c.limit||0)}</span></div>
-    <div class="sheet-meta-pill"><span class="smp-label">Status</span><span class="smp-value">${statusLabel(c.status)}</span></div>`;
-  document.getElementById('sheetBenefits').innerHTML=(c.benefits||[]).map(b=>`<div class="benefit-item">${b}</div>`).join('');
-  document.getElementById('sheetNote').innerHTML=c.note?`<div class="sheet-note"><div class="sheet-note-label">Advisor Note</div>${c.note}</div>`:'';
-
-  // Offline briefing — check rotating categories
-  const rot=ROTATING_NOW[c.name];
-  const rotHtml=rot?`<div style="background:var(--amber-dim);border:1px solid rgba(224,160,64,0.25);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--amber);line-height:1.6">
-    <strong style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">⟳ Active Rotating Category</strong>
-    <strong>${rot.rate}</strong> on <strong>${rot.category}</strong> — active now through <strong>${rot.expires}</strong>. Make sure you've activated this quarter's category in the app or website.
-  </div>`:'';
-
-  const ml=['Prime membership','Executive membership','Gold subscription'];
-  const memberNote=ml.includes(c.feelabel)?`<div style="background:var(--blue-dim);border:1px solid rgba(91,141,238,0.2);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--blue);line-height:1.6">
-    <strong style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px">ℹ Membership Required</strong>
-    This card requires an active ${c.feelabel} (${fmtFull(c.fee)}/yr). The membership cost is included in the annual fee shown above.
-  </div>`:'';
-
-  document.getElementById('aiDetailContent').innerHTML=`<div class="sheet-divider"></div><div class="sheet-section-title">Key Facts</div>${rotHtml}${memberNote}`;
-  document.getElementById('aiDetailLoading').classList.add('hidden');
-  document.getElementById('sheetOverlay').classList.add('open');
-  document.body.style.overflow='hidden';
-}
-
-// ═══════════════════════════════════════════════════
-// OFFLINE LIVE UPDATES BANNER
-// ═══════════════════════════════════════════════════
-function fetchPageUpdates(){
-  const banner=document.getElementById('updatesBanner');
-  const loading=document.getElementById('updatesLoading');
-  const content=document.getElementById('updatesContent');
-  const dateEl=document.getElementById('updatesDate');
-  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  dateEl.textContent=today;
-  loading.classList.add('hidden');
-
-  const updates=[];
-
-  // Check which of the user's cards have active rotating categories
-  for(const[cardName,rot]of Object.entries(ROTATING_NOW)){
-    if(cards.find(c=>c.name===cardName)){
-      updates.push({
-        card:cardName,
-        update:`${rot.rate} on ${rot.category} through ${rot.expires} — activate now if you haven't.`,
-        type:'rotating',
-        highlight:rot.rate
-      });
-    }
-  }
-
-  // Check for expiring credits
-  const expiringCards=cards.filter(c=>{
-    const n=c.note||'';
-    return n.toLowerCase().includes('oct 2026')||n.toLowerCase().includes('dec 2027')||n.toLowerCase().includes('2026');
-  });
-  for(const c of expiringCards.slice(0,2)){
-    const m=c.note.match(/\$\d+[^.]+202[6-9]/i);
-    if(m)updates.push({card:c.name,update:m[0].trim()+' — use before it expires.',type:'expiring',highlight:m[0].match(/\$[\d,]+/)?.[0]||''});
-  }
-
-  if(updates.length===0){banner.classList.add('hidden');return;}
-  banner.classList.remove('hidden');
-  const typeIcon={'rotating':'⟳','expiring':'⚠','activate':'☑','promo':'✦'};
-  const typeColor={'rotating':'var(--amber)','expiring':'var(--red)','activate':'var(--blue)','promo':'var(--gold)'};
-  content.innerHTML=updates.slice(0,5).map(u=>{
-    const highlighted=u.highlight?u.update.replace(u.highlight,`<span class="update-highlight">${u.highlight}</span>`):u.update;
-    return`<div class="update-item"><span style="color:${typeColor[u.type]||'var(--gold)'};font-size:11px;flex-shrink:0;margin-top:1px">${typeIcon[u.type]||'✦'}</span><div><span class="update-card-name">${u.card}</span><span class="update-text"> — ${highlighted}</span></div></div>`;
-  }).join('');
-}
-
-// ═══════════════════════════════════════════════════
-// CORE APP LOGIC
+// DATA
 // ═══════════════════════════════════════════════════
 const INITIAL_CARDS=[{id:1,section:'premium',issuer:'Capital One · Visa Infinite',name:'Venture X Rewards',fee:395,feelabel:'per year',limit:11000,status:'keep',rewards:'2x all · 10x hotels/cars · 5x flights · Priority Pass lounge · $300 travel credit',benefits:['2x miles on every purchase, no category limits','10x miles on hotels & rental cars via C1 Travel','5x miles on flights & vacation rentals via C1 Travel','$300 annual travel credit (C1 Travel bookings)','10,000 anniversary bonus miles every year (~$100)','Priority Pass + Capital One Lounge access (1,300+ lounges)','$120 Global Entry / TSA PreCheck credit every 4 years','No foreign transaction fees'],note:'Credits alone ($400+) more than offset the $395 fee.'},{id:2,section:'premium',issuer:'Chase · Visa Signature',name:'Sapphire Preferred',fee:95,feelabel:'per year',limit:21200,status:'keep',rewards:'5x Chase Travel · 3x dining · Free DashPass · $50 hotel credit · 10% anniversary bonus',benefits:['5x points on Chase Travel bookings','3x points on dining, streaming & online groceries','2x points on all other travel purchases','10% anniversary point bonus on total annual spend','$50 annual hotel credit via Chase Travel','Free DashPass membership through Dec 2027 (~$120 value)','$10/month promo on DoorDash non-restaurant orders','Transfer partners: Hyatt, United, Southwest, BA & more'],note:'DashPass + $10/mo promo + hotel credit = $290 value vs $95 fee.'},{id:3,section:'premium',issuer:'American Express',name:'Blue Cash Preferred',fee:95,feelabel:'per year',limit:35000,status:'keep',rewards:'6% supermarkets & streaming · 3% gas & transit · $120 Disney credit/yr',benefits:['6% cash back at U.S. supermarkets (up to $6,000/yr)','6% on select U.S. streaming subscriptions','3% on U.S. gas stations & transit','1% on all other purchases','Up to $120/yr Disney Bundle credit ($10/month)'],note:'Disney credit nearly offsets the $95 fee. Best grocery card available.'},{id:4,section:'premium',issuer:'Citi · Mastercard',name:'AAdvantage Platinum Select',fee:99,feelabel:'per year',limit:7600,status:'keep',rewards:'2x AA/dining/gas · Free checked bag · Preferred boarding · $180 Turo credit',benefits:['2x AAdvantage miles on AA purchases','2x miles at restaurants & gas stations','First checked bag free on AA domestic flights','Preferred boarding on American Airlines flights','$180 Turo credit through October 2026','80,000 bonus miles already earned'],note:'Free bag saves $70+ round-trip. Redeem on Oneworld partners: Qatar, Cathay, JAL.'},{id:5,section:'membership',issuer:'Citi · Visa Signature',name:'Costco Anywhere Visa',fee:130,feelabel:'Executive membership',limit:4800,status:'keep',rewards:'5% Costco gas · 4% other gas · 3% restaurants & travel · 2% Costco',benefits:['5% cash back on Costco gas purchases','4% on other eligible gas & EV charging (first $7,000/yr)','3% at restaurants & eligible travel incl. Costco Travel','2% on all Costco & Costco.com purchases','Executive membership: 2% annual reward on all Costco spend (capped $1,250)'],note:'Executive membership ($130/yr) pays for itself at ~$3,250 Costco spend/yr.'},{id:6,section:'membership',issuer:'Chase · Visa Signature',name:'Amazon Prime Visa',fee:139,feelabel:'Prime membership',limit:500,status:'keep',rewards:'5% Amazon, Whole Foods & Chase Travel · 2% gas, dining, transit · No FTF',benefits:['5% back at Amazon.com, Amazon Fresh & Whole Foods','5% back on Chase Travel bookings','2% at gas stations, restaurants, local transit & rideshare','No foreign transaction fees'],note:'Low limit — consider requesting a credit limit increase with Chase.'},{id:7,section:'membership',issuer:'Robinhood Credit · Visa',name:'Robinhood Gold Card',fee:50,feelabel:'Gold subscription',limit:10000,status:'keep',rewards:'3% cash back everything · 5% RH Travel · Auto-invest rewards · No FTF',benefits:['3% cash back on all purchases, no category limits','5% on travel booked through Robinhood Travel portal','Redeem into Robinhood brokerage (1¢/pt)','Gold: 3.35% APY on uninvested brokerage cash','Gold: 3% IRA match (up to $225/yr at max contribution)'],note:'Default catch-all card. Gold sub pays for itself 4.5x through IRA match alone.'},{id:8,section:'nofee',issuer:'Chase · Visa',name:'Freedom Unlimited',fee:0,feelabel:'no annual fee',limit:15700,status:'keep',rewards:'1.5% all · 3% dining & drugstores · 5% Chase Travel',benefits:['1.5% cash back on all purchases (unlimited)','3% cash back at drugstores','3% cash back on dining (incl. takeout & delivery)','5% cash back on Chase Travel bookings','Points pool with Sapphire Preferred for extra value'],note:'Best for dining and drugstore spend. Pairs well with Sapphire Preferred.'},{id:9,section:'nofee',issuer:'Discover',name:'Discover it Cash Back',fee:0,feelabel:'no annual fee',limit:5000,status:'keep',rewards:'5% rotating quarterly categories · 1% all else · Cashback Match year 1',benefits:['5% on rotating quarterly categories (activation required)','Q2 2026 (Apr–Jun): Restaurants & home improvement stores','1% unlimited cash back on all other purchases','Cashback Match: Discover matches all cash back in year 1'],note:'Currently 5% at restaurants & home improvement through June 30, 2026.'},{id:10,section:'nofee',issuer:'Citi · Mastercard',name:'Strata Card',fee:0,feelabel:'no annual fee',limit:8000,status:'keep',rewards:'5x Citi Travel · 3x supermarkets, gas, transit · 3x self-select category',benefits:['5x points via Citi Travel portal','3x on supermarkets, gas & EV charging, transit','3x on one self-select category per quarter'],note:'Self-select 3x category is a hidden gem.'},{id:11,section:'nofee',issuer:'Apple / Goldman Sachs · Mastercard',name:'Apple Card',fee:0,feelabel:'no annual fee',limit:10000,status:'keep',rewards:'3% Apple & select Apple Pay merchants · 2% all Apple Pay · Daily Cash',benefits:['3% Daily Cash at Apple & select Apple Pay merchants (Uber, Nike, Walgreens)','2% Daily Cash on all other Apple Pay purchases','1% on physical card use','No annual fee, no late fees, no foreign transaction fees'],note:'Use digital/Apple Pay only — physical card earns just 1%.'},{id:12,section:'nofee',issuer:'Comenity · Visa Signature',name:'AAA Visa Travel Card',fee:0,feelabel:'no annual fee',limit:11800,status:'keep',rewards:'5% gas & EV (capped $350/yr) · 3% restaurants, grocery, travel & AAA',benefits:['5% cash back on gas & EV charging (capped at $350/yr)','3% cash back at restaurants, grocery stores, travel & AAA','No annual fee · No foreign transaction fees'],note:'Backup gas & dining card. Gas cash back capped at $350/yr.'},{id:13,section:'nofee',issuer:'Santander · Mastercard',name:'Ultimate Cash Back',fee:0,feelabel:'no annual fee',limit:3000,status:'keep',rewards:'3% first 12 months · 1.5% ongoing · 0% intro APR 15 months',benefits:['3% cash back on all purchases for first 12 months (up to $20,000)','1.5% unlimited cash back on all purchases after promo ends','0% intro APR on purchases for 15 billing cycles'],note:'Keep open for credit history. 1.5% is beaten by Robinhood Gold after the promo ends.'},{id:14,section:'nofee',issuer:'Synchrony · Mastercard',name:'PayPal Cashback Mastercard',fee:0,feelabel:'no annual fee',limit:6000,status:'keep',rewards:'3% PayPal purchases · 1.5% everywhere else',benefits:['3% cash back when checking out with PayPal','1.5% cash back on all other purchases (unlimited)','Cash back redeemable to PayPal balance anytime'],note:'3% foreign transaction fee — swap to Venture X or Robinhood abroad.'},{id:15,section:'nofee',issuer:'Synchrony · Mastercard',name:'PayPal Credit Card',fee:0,feelabel:'no annual fee',limit:3000,status:'niche',rewards:'0% APR financing on PayPal purchases · No late fees',benefits:['0% APR for 6 months on PayPal purchases','No late fees on the buy-now-pay-later balance'],note:'Use only for 0% financing on large PayPal purchases. Pay off before promo ends.'},{id:16,section:'nofee',issuer:'DCU · Visa',name:'Visa Platinum',fee:0,feelabel:'no annual fee',limit:10000,status:'passive',rewards:'No rewards · Low APR (~10–13%)',benefits:['Very low variable APR (~10–13%) — best for carrying a balance','No annual fee · No balance transfer fee','No rewards program'],note:'Keep open for credit history and emergency low-rate borrowing.'},{id:17,section:'cut',issuer:'Citi · Store Card',name:'Home Depot Consumer Card',fee:0,feelabel:'no annual fee',limit:4000,status:'cut',rewards:'No rewards · Store-only · Deferred interest at 29.99% APR',benefits:['No rewards program','Store-only use (Home Depot & HomeDepot.com only)','Deferred interest at 29.99% APR if not paid in full by promo end'],note:'Zero rewards, dangerous deferred interest. Use Discover Q2 5% at home improvement instead.'}];
 
@@ -1091,6 +863,7 @@ let cards=JSON.parse(localStorage.getItem('myCards')||'null')||JSON.parse(JSON.s
 let nextId=Math.max(...cards.map(c=>c.id))+1;
 let selectedForRemove=new Set();
 let editingId=null;
+let addNameTimer=null;
 let limitsVisible=false;
 
 function save(){localStorage.setItem('myCards',JSON.stringify(cards))}
@@ -1098,6 +871,9 @@ function fmtFull(n){return'$'+n.toLocaleString('en-US')}
 function statusClass(s){return{keep:'status-keep',passive:'status-passive',niche:'status-niche',cut:'status-cut'}[s]||'status-keep'}
 function statusLabel(s){return{keep:'✦ Keep',passive:'— Passive',niche:'◈ Niche Use',cut:'✕ Cut'}[s]||'✦ Keep'}
 
+// ═══════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════════
 function goToCards(){
   document.getElementById('home-page').classList.add('hidden');
   const cp=document.getElementById('cards-page');
@@ -1133,6 +909,9 @@ function renderStats(){
   document.getElementById('statTotal').textContent='$'+(cf+mf).toLocaleString('en-US');
 }
 
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
 function renderCard(c,idx){
   return`<div class="card" style="animation-delay:${idx*0.04}s" onclick="openSheet(${c.id})">
     <div class="card-visual">${makeCardSvg(c,130)}</div>
@@ -1152,7 +931,6 @@ function renderCard(c,idx){
     </div>
   </div>`;
 }
-
 function render(){
   const container=document.getElementById('cardSections');
   container.innerHTML='';
@@ -1163,7 +941,6 @@ function render(){
   });
   renderStats();
 }
-
 function toggleLimits(){
   limitsVisible=!limitsVisible;
   const btn=document.getElementById('limitToggleBtn');
@@ -1172,21 +949,103 @@ function toggleLimits(){
   document.querySelectorAll('.card-limit').forEach(el=>el.classList.toggle('hidden',!limitsVisible));
 }
 
+// ═══════════════════════════════════════════════════
+// DRAWER & MODALS
+// ═══════════════════════════════════════════════════
 function toggleDrawer(){const o=document.getElementById('drawer').classList.contains('open');o?closeDrawer():openDrawer()}
 function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawerOverlay').classList.add('open');document.getElementById('menuBtn').classList.add('active')}
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawerOverlay').classList.remove('open');document.getElementById('menuBtn').classList.remove('active')}
-
-function openModal(id){
-  if(id==='remove')buildRemoveList();
-  if(id==='edit')buildEditList();
-  document.getElementById('modal-'+id).classList.add('open');
-}
+function openModal(id){if(id==='remove')buildRemoveList();if(id==='edit')buildEditList();document.getElementById('modal-'+id).classList.add('open')}
 function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+
+// ═══════════════════════════════════════════════════
+// CARD DETAIL SHEET — AI powered
+// ═══════════════════════════════════════════════════
+async function openSheet(id){
+  const c=cards.find(x=>x.id===id);if(!c)return;
+  document.getElementById('sheetVisual').innerHTML=makeCardSvg(c,160);
+  document.getElementById('sheetIssuer').textContent=c.issuer||'';
+  document.getElementById('sheetName').textContent=c.name;
+  document.getElementById('sheetMeta').innerHTML=`
+    <div class="sheet-meta-pill"><span class="smp-label">Annual Fee</span><span class="smp-value gold">${c.fee===0?'$0':'$'+c.fee}</span></div>
+    <div class="sheet-meta-pill"><span class="smp-label">Credit Limit</span><span class="smp-value green">${fmtFull(c.limit||0)}</span></div>
+    <div class="sheet-meta-pill"><span class="smp-label">Status</span><span class="smp-value">${statusLabel(c.status)}</span></div>`;
+  document.getElementById('sheetBenefits').innerHTML=(c.benefits||[]).map(b=>`<div class="benefit-item">${b}</div>`).join('');
+  document.getElementById('sheetNote').innerHTML=c.note?`<div class="sheet-note"><div class="sheet-note-label">Advisor Note</div>${c.note}</div>`:'';
+  document.getElementById('aiDetailContent').innerHTML='';
+  document.getElementById('aiDetailLoading').classList.remove('hidden');
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  requireApiKey(()=>fetchCardDetail(c));
+}
+
+async function fetchCardDetail(c){
+  const loading=document.getElementById('aiDetailLoading');
+  const content=document.getElementById('aiDetailContent');
+  try{
+    const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const prompt=`Friendly financial advisor briefing. Today: ${today}. Card: ${c.name} (${c.issuer||''}).
+Cover: 1) Best use for this card right now, 2) Key rewards rates, 3) If this card has rotating quarterly categories state EXACTLY what's active on ${today} and when they expire, 4) Any expiring credits or time-sensitive promos, 5) One tip.
+Bold (**text**) key numbers/dates. Under 220 words. Conversational paragraphs, no bullet lists.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok)throw new Error(`API error ${res.status}`);
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    let text=data.content[0].text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    const paras=text.split('\n\n').filter(p=>p.trim());
+    const today2=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    content.innerHTML='<div class="sheet-divider"></div><div class="sheet-section-title">Current Status — '+today2+'</div>'+paras.map(p=>`<p class="ai-detail-content" style="margin-bottom:10px">${p.replace(/\n/g,'<br>')}</p>`).join('');
+  }catch(e){
+    content.innerHTML=`<div style="font-size:11px;color:var(--text-dim);margin-top:8px">Briefing unavailable: ${e.message}</div>`;
+  }finally{loading.classList.add('hidden')}
+}
 
 function closeSheet(e){
   if(e&&e.target!==document.getElementById('sheetOverlay'))return;
   document.getElementById('sheetOverlay').classList.remove('open');
   document.body.style.overflow='';
+}
+
+// ═══════════════════════════════════════════════════
+// ADD CARD — AI auto-fill
+// ═══════════════════════════════════════════════════
+function onNameInput(){
+  clearTimeout(addNameTimer);
+  const name=document.getElementById('f-name').value.trim();
+  document.getElementById('addSubmitBtn').disabled=name.length<2;
+  if(name.length<4)return;
+  addNameTimer=setTimeout(()=>requireApiKey(()=>autoFillCard(name)),800);
+}
+
+async function autoFillCard(name){
+  const loading=document.getElementById('aiLoading');
+  const fields=document.getElementById('aiFilledFields');
+  loading.classList.remove('hidden');fields.style.display='none';
+  try{
+    const prompt=`Credit card expert. User adding "${name}". Return ONLY valid JSON, no other text:
+{"issuer":"e.g. Chase · Visa Signature","fee":95,"feelabel":"per year","section":"premium","status":"keep","rewards":"short one-line max 12 words","benefits":["benefit 1","benefit 2","benefit 3","benefit 4","benefit 5"],"note":"one sentence advisor tip"}
+section: premium|membership|nofee|cut — pick correctly based on the card.
+status: keep|passive|niche|cut — pick correctly based on the card.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok)throw new Error(`API error ${res.status}`);
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const parsed=extractJSON(data.content[0].text,'object');
+    document.getElementById('f-issuer').value=parsed.issuer||'';
+    document.getElementById('f-fee').value=parsed.fee||0;
+    document.getElementById('f-feelabel').value=parsed.feelabel||'per year';
+    document.getElementById('f-rewards').value=parsed.rewards||'';
+    document.getElementById('f-benefits').value=(parsed.benefits||[]).join('\n');
+    document.getElementById('f-note').value=parsed.note||'';
+    window._autoSection=parsed.section||'nofee';
+    window._autoStatus=parsed.status||'keep';
+    fields.style.display='block';
+    document.getElementById('addSubmitBtn').disabled=false;
+  }catch(e){
+    fields.style.display='block';
+    document.getElementById('addSubmitBtn').disabled=false;
+    console.error('Auto-fill error:',e);
+  }finally{loading.classList.add('hidden')}
 }
 
 function addCard(){
@@ -1199,6 +1058,90 @@ function addCard(){
   window._autoSection=null;window._autoStatus=null;
 }
 
+// ═══════════════════════════════════════════════════
+// STORE SEARCH — AI powered
+// ═══════════════════════════════════════════════════
+function runSearch(){
+  requireApiKey(()=>doRunSearch());
+}
+
+async function doRunSearch(){
+  const store=document.getElementById('storeInput').value.trim();if(!store)return;
+  const loading=document.getElementById('searchLoading');
+  const results=document.getElementById('searchResults');
+  const goBtn=document.getElementById('searchGoBtn');
+  loading.classList.remove('hidden');results.innerHTML='';goBtn.disabled=true;
+  try{
+    const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const summary=cards.map(c=>`${c.name}: ${c.rewards}`).join('\n');
+    const prompt=`Credit card rewards expert. Date: ${today}. Store: "${store}".
+Cards:
+${summary}
+
+Factor in CURRENT rotating quarterly categories active on ${today} (e.g. Discover it, Chase Freedom).
+Return ONLY a valid JSON array, no other text:
+[{"rank":1,"card":"exact card name from list","rate":"e.g. 5% cash back","reason":"one sentence why","tip":"one practical tip","rotating":true}]
+Top 3 only. Keep reason and tip under 15 words each.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok){const e=await res.text();results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span><strong>API error ${res.status}</strong><br><span style="font-size:10px">${e.slice(0,200)}</span></div>`;return;}
+    const data=await res.json();
+    if(data.error){results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>${data.error.message}</div>`;return;}
+    let parsed;
+    try{parsed=extractJSON(data.content[0].text,'array');}
+    catch(pe){results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>Could not read response. Try again.</div>`;return;}
+    if(!parsed.length){results.innerHTML='<div class="search-placeholder"><span class="ico">⚠</span>No results. Try a different store name.</div>';return;}
+    results.innerHTML=parsed.map((r,i)=>`<div class="result-card" style="animation-delay:${i*0.08}s">
+      <div class="result-rank"><span class="rank-badge rank-${r.rank}">${r.rank}</span><span class="rank-name">${r.card}</span><span class="rank-rate">${r.rate}</span></div>
+      ${r.rotating?`<div style="display:inline-flex;align-items:center;gap:4px;background:var(--amber-dim);border:1px solid rgba(224,160,64,0.25);border-radius:6px;padding:2px 7px;font-size:9px;font-weight:500;color:var(--amber);margin-bottom:5px;letter-spacing:0.05em;text-transform:uppercase">⟳ Rotating category</div>`:''}
+      <div class="result-reason">${r.reason}</div>
+      ${r.tip?`<div class="result-tip">💡 ${r.tip}</div>`:''}</div>`).join('');
+  }catch(e){
+    results.innerHTML=`<div class="search-placeholder"><span class="ico">⚠</span>${e.message}</div>`;
+    console.error('Search error:',e);
+  }finally{loading.classList.add('hidden');goBtn.disabled=false}
+}
+
+// ═══════════════════════════════════════════════════
+// LIVE UPDATES BANNER — AI powered
+// ═══════════════════════════════════════════════════
+async function fetchPageUpdates(){
+  if(!getApiKey()&&!location.hostname.includes('claude.ai')){
+    document.getElementById('updatesBanner').classList.add('hidden');return;
+  }
+  const banner=document.getElementById('updatesBanner');
+  const loading=document.getElementById('updatesLoading');
+  const content=document.getElementById('updatesContent');
+  const dateEl=document.getElementById('updatesDate');
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  dateEl.textContent=today;
+  banner.classList.remove('hidden');
+  content.innerHTML='';
+  loading.classList.remove('hidden');
+  try{
+    const cardNames=cards.map(c=>c.name).join(', ');
+    const prompt=`Credit card expert. Date: ${today}. Cards: ${cardNames}.
+List only time-sensitive items active RIGHT NOW: rotating quarterly 5% categories, credits expiring soon, things to activate.
+ONLY a JSON array, no prose, max 5 items, update and highlight under 12 words each:
+[{"card":"exact card name","update":"one sentence","type":"rotating|expiring|activate|promo","highlight":"key fact"}]`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    if(!res.ok)throw new Error(`API error ${res.status}`);
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const parsed=extractJSON(data.content[0].text,'array');
+    if(!parsed||!parsed.length){banner.classList.add('hidden');return;}
+    const typeIcon={'rotating':'⟳','expiring':'⚠','activate':'☑','promo':'✦'};
+    const typeColor={'rotating':'var(--amber)','expiring':'var(--red)','activate':'var(--blue)','promo':'var(--gold)'};
+    content.innerHTML=parsed.map(u=>{
+      const highlighted=(u.highlight&&u.update)?u.update.replace(u.highlight,`<span class="update-highlight">${u.highlight}</span>`):u.update;
+      return`<div class="update-item"><span style="color:${typeColor[u.type]||'var(--gold)'};font-size:11px;flex-shrink:0;margin-top:1px">${typeIcon[u.type]||'✦'}</span><div><span class="update-card-name">${u.card}</span><span class="update-text"> — ${highlighted}</span></div></div>`;
+    }).join('');
+  }catch(e){banner.classList.add('hidden');console.error('Updates error:',e);}
+  finally{loading.classList.add('hidden')}
+}
+
+// ═══════════════════════════════════════════════════
+// EDIT
+// ═══════════════════════════════════════════════════
 function buildEditList(){
   document.getElementById('editList').innerHTML=cards.map(c=>`<div class="edit-item" onclick="openEditForm(${c.id})"><div class="edit-item-name">${c.name}</div><div class="edit-item-sub">${c.issuer||''} · ${fmtFull(c.limit||0)} limit · $${c.fee}/yr</div></div>`).join('');
   showEditList();
@@ -1232,6 +1175,9 @@ function saveEdit(){
   save();render();buildEditList();
 }
 
+// ═══════════════════════════════════════════════════
+// REMOVE
+// ═══════════════════════════════════════════════════
 function buildRemoveList(){
   selectedForRemove=new Set();updateRemoveCount();
   document.getElementById('removeList').innerHTML=cards.map(c=>`<div class="remove-item" id="ri-${c.id}" onclick="toggleRemoveItem(${c.id})"><div class="remove-check">✓</div><div><div class="remove-item-name">${c.name}</div><div class="remove-item-sub">${c.issuer||''} · ${fmtFull(c.limit||0)} limit</div></div></div>`).join('');
@@ -1243,6 +1189,9 @@ function openConfirmRemove(){if(selectedForRemove.size===0)return;const names=ca
 function closeConfirmRemove(){document.getElementById('confirmRemoveOverlay').classList.remove('open')}
 function confirmRemove(){cards=cards.filter(c=>!selectedForRemove.has(c.id));save();render();closeConfirmRemove();closeModal('remove')}
 
+// ═══════════════════════════════════════════════════
+// KEYBOARD & EVENTS
+// ═══════════════════════════════════════════════════
 document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
@@ -1252,9 +1201,12 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-// ─── INIT ───
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
 updateHomeStats();
 render();
+updateApiKeyBtn();
 </script>
 </body>
 </html>
